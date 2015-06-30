@@ -1,6 +1,3 @@
-# data directory
-data/
-
 # vim swap files
 *.swp
 *.swo
