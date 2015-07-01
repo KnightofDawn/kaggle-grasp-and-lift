@@ -50,29 +50,33 @@ def dump_data(subj_range, series_range, train):
         for series_id in series_range:
             print('  series %d...' % (series_id))
             if train:
-                in_data_file = 'data/train/subj%d_series%d_data.csv' % (subj_id, series_id)
-                in_events_file = 'data/train/subj%d_series%d_events.csv' % (subj_id, series_id)
+                in_data_file = 'data/train/subj%d_series%d_data.csv' % \
+                               (subj_id, series_id)
+                in_events_file = 'data/train/subj%d_series%d_events.csv' % \
+                                 (subj_id, series_id)
 
                 data = read_data_series(in_data_file)
                 events = read_events_series(in_events_file)
-                assert data.shape[1] == events.shape[1], 'need an equal number of timeframes'
+                assert data.shape[1] == events.shape[1], \
+                    ('need an equal number of timeframes')
 
                 # write the data and events to a single h5py file
                 out_file = in_data_file.replace('train', 'processed').replace(
-                                                '_data', '').replace(
-                                                'csv', 'h5')
+                    '_data', '').replace(
+                    'csv', 'h5')
                 h5f_data = h5py.File(out_file, 'w')
                 h5f_data.create_dataset('data', data=data)
                 h5f_data.create_dataset('events', data=events)
                 h5f_data.close()
             else:
-                in_data_file = 'data/test/subj%d_series%d_data.csv' % (subj_id, series_id)
+                in_data_file = 'data/test/subj%d_series%d_data.csv' % \
+                               (subj_id, series_id)
 
                 data = read_data_series(in_data_file)
 
                 out_file = in_data_file.replace('test', 'processed').replace(
-                                                '_data', '').replace(
-                                                'csv', 'h5')
+                    '_data', '').replace(
+                    'csv', 'h5')
                 h5f_data = h5py.File(out_file, 'w')
                 h5f_data.create_dataset('data', data=data)
                 h5f_data.close()
@@ -121,17 +125,20 @@ def generate_data():
 
     print('getting test data...')
     dump_data(subj_range, test_range, train=False)
-    
 
-# time the loading of the h5py files and print the shapes of the time series arrays
+
+# time the loading of the h5py files and print the shapes of the time series
+# arrays
 def verify_data():
     for subject in range(1, 13):
         # load the training data for each subject, time it, and print the shape
         t0 = time()
         data_list, events_list = load_subject(subject, range(1, 9))
-        print('loaded training data for subject %d in %.2f s' % (subject, time() - t0))
+        print('loaded training data for subject %d in %.2f s' %
+              (subject, time() - t0))
         print('verifying training data for subject %d...' % (subject))
-        for i, (data, events) in enumerate(zip(data_list, events_list), start=1):
+        for i, (data, events) in enumerate(zip(data_list, events_list),
+                                           start=1):
             print('  series %d:' % (i))
             print('    data.shape = %r' % (data.shape,))
             print('    events.shape = %r' % (events.shape,))
@@ -139,9 +146,11 @@ def verify_data():
         # load the test data for each subject, time it, and print the shape
         t0 = time()
         data_list, events_list = load_subject(subject, range(9, 11))
-        print('loaded test data for subject %d in %.2f s' % (subject, time() - t0))
+        print('loaded test data for subject %d in %.2f s' %
+              (subject, time() - t0))
         print('verifying test data for subject %d...' % (subject))
-        for i, (data, events) in enumerate(zip(data_list, events_list), start=1):
+        for i, (data, events) in enumerate(zip(data_list, events_list),
+                                           start=1):
             print('  series %d:' % (i))
             print('    data.shape = %r' % (data.shape,))
             print('    events = %r' % (events))
@@ -150,7 +159,6 @@ def verify_data():
 def main():
     #generate_data()
     verify_data()
-    
 
 
 if __name__ == '__main__':
