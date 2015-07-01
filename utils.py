@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
-import cPickle as pickle
+import h5py
 import numpy as np
 
-TRAIN_FILE = 'data/processed/train.pickle'
-TEST_FILE = 'data/processed/test.pickle'
+from time import time
 
 
 # read the data from a single series given the filename
@@ -45,60 +44,71 @@ def read_events_series(filename):
 
 
 # read the data for a range of subjects and series
-def read_data(subj_range, series_range, train):
-    data_subjects, events_subjects = [], []
+def dump_data(subj_range, series_range, train):
     for subj_id in subj_range:
-        data_series, events_series = [], []
         print('reading data for subject %d...' % (subj_id))
         for series_id in series_range:
             print('  series %d...' % (series_id))
             if train:
-                data_file = 'data/train/subj%d_series%d_data.csv' % (subj_id, series_id)
-                events_file = 'data/train/subj%d_series%d_events.csv' % (subj_id, series_id)
+                in_data_file = 'data/train/subj%d_series%d_data.csv' % (subj_id, series_id)
+                in_events_file = 'data/train/subj%d_series%d_events.csv' % (subj_id, series_id)
 
-                data = read_data_series(data_file)
-                events = read_events_series(events_file)
+                data = read_data_series(in_data_file)
+                events = read_events_series(in_events_file)
                 assert data.shape[1] == events.shape[1], 'need an equal number of timeframes'
 
+                # write the data and events to a single h5py file
+                out_file = in_data_file.replace('train', 'processed').replace(
+                                                '_data', '').replace(
+                                                'csv', 'h5')
+                h5f_data = h5py.File(out_file, 'w')
+                h5f_data.create_dataset('data', data=data)
+                h5f_data.create_dataset('events', data=events)
+                h5f_data.close()
             else:
-                data_file = 'data/test/subj%d_series%d_data.csv' % (subj_id, series_id)
-                events_file = 'data/test/subj%d_series%d_events.csv' % (subj_id, series_id)
+                in_data_file = 'data/test/subj%d_series%d_data.csv' % (subj_id, series_id)
 
-                data = read_data_series(data_file)
-                events = None  # no events for test data
+                data = read_data_series(in_data_file)
 
-            data_series.append(data)
-            if events is not None:
-                events_series.append(events)
+                out_file = in_data_file.replace('test', 'processed').replace(
+                                                '_data', '').replace(
+                                                'csv', 'h5')
+                h5f_data = h5py.File(out_file, 'w')
+                h5f_data.create_dataset('data', data=data)
+                h5f_data.close()
 
-        data_subjects.append(data_series)
-        if events_series:
-            events_subjects.append(events_series)
-
-    assert type(data_subjects[0][0]) == np.ndarray, 'list elements should be numpy arrays'
-    if events_subjects:
-        assert type(events_subjects[0][0]) == np.ndarray, 'list elements should be numpy arrays'
-
-    return data_subjects, events_subjects
+    print('done')
 
 
 # read the training and test data from disk
-def load_data():
-    print('getting training data...')
-    print('loading training data from %s...' % (TRAIN_FILE))
-    with open(TRAIN_FILE, 'rb') as ofile:
-        train_data, train_events = pickle.load(ofile)
+def load_series(subj_id, series_id):
+    # it will be faster to load from h5py than pickle for such large arrays
+    in_file = 'data/processed/subj%d_series%d.h5' % (subj_id, series_id)
+    h5f_data = h5py.File(in_file, 'r')
 
-    print('getting test data...')
-    print('loading test data from %s...' % (TEST_FILE))
-    with open(TEST_FILE, 'rb') as ofile:
-        test_data = pickle.load(ofile)
+    data = h5f_data['data'][:]
+    if 'events' in h5f_data:
+        events = h5f_data['events'][:]
+    else:
+        events = None
 
-    return train_data, train_events, test_data
+    h5f_data.close()
+    return data, events
+
+
+# load a range of time series for a given subject
+def load_subject(subj_id, series_range):
+    data_list, events_list = [], []
+    for series_id in series_range:
+        data, events = load_series(subj_id, series_id)
+        data_list.append(data)
+        events_list.append(events)
+
+    return data_list, events_list
 
 
 # dump the training and test data to disk
-def dump_data():
+def generate_data():
     # there are 12 subjects
     subj_range = range(1, 13)
     # series [1...8] are training data
@@ -107,21 +117,40 @@ def dump_data():
     test_range = range(9, 11)
 
     print('getting training data...')
-    train_data, train_events = read_data(subj_range, train_range, train=True)
-    print('writing training data to %s...' % (TRAIN_FILE))
-    with open(TRAIN_FILE, 'wb') as ofile:
-        pickle.dump((train_data, train_events), ofile, protocol=pickle.HIGHEST_PROTOCOL)
+    dump_data(subj_range, train_range, train=True)
 
     print('getting test data...')
-    test_data, _ = read_data(subj_range, test_range, train=False)
-    print('writing test data to %s...' % (TEST_FILE))
-    with open(TEST_FILE, 'wb') as ofile:
-        pickle.dump(test_data, ofile, protocol=pickle.HIGHEST_PROTOCOL)
-
+    dump_data(subj_range, test_range, train=False)
     
+
+# time the loading of the h5py files and print the shapes of the time series arrays
+def verify_data():
+    for subject in range(1, 13):
+        # load the training data for each subject, time it, and print the shape
+        t0 = time()
+        data_list, events_list = load_subject(subject, range(1, 9))
+        print('loaded training data for subject %d in %.2f s' % (subject, time() - t0))
+        print('verifying training data for subject %d...' % (subject))
+        for i, (data, events) in enumerate(zip(data_list, events_list), start=1):
+            print('  series %d:' % (i))
+            print('    data.shape = %r' % (data.shape,))
+            print('    events.shape = %r' % (events.shape,))
+
+        # load the test data for each subject, time it, and print the shape
+        t0 = time()
+        data_list, events_list = load_subject(subject, range(9, 11))
+        print('loaded test data for subject %d in %.2f s' % (subject, time() - t0))
+        print('verifying test data for subject %d...' % (subject))
+        for i, (data, events) in enumerate(zip(data_list, events_list), start=1):
+            print('  series %d:' % (i))
+            print('    data.shape = %r' % (data.shape,))
+            print('    events = %r' % (events))
+
+
 def main():
-    #dump_data()
-    train_data, train_events, test_data = load_data()
+    #generate_data()
+    verify_data()
+    
 
 
 if __name__ == '__main__':
