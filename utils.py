@@ -101,7 +101,9 @@ def load_series(subj_id, series_id):
 
 
 # load a range of time series for a given subject
-def load_subject(subj_id, series_range):
+def load_subject(subj_id, series_range=None):
+    if series_range is None:
+        series_range = range(1, 11)
     data_list, events_list = [], []
     for series_id in series_range:
         data, events = load_series(subj_id, series_id)
@@ -109,6 +111,32 @@ def load_subject(subj_id, series_range):
         events_list.append(events)
 
     return data_list, events_list
+
+
+# split the time series into training, validation, and test
+def split_train_test_data(data_list, events_list, val_size=2, rand=False):
+    # randomly choose val_size time series for validation
+    if rand:
+        val_ind = np.random.choice(8, size=val_size, replace=False)
+    # just use the last two time series for validation
+    else:
+        val_ind = np.array([6, 7])
+
+    train_data, valid_data = [], []
+    train_events, valid_events = [], []
+    # separate the time series into training and validation
+    for i in range(8):
+        if i not in val_ind:
+            train_data.append(data_list[i])
+            train_events.append(events_list[i])
+        else:
+            valid_data.append(data_list[i])
+            valid_events.append(events_list[i])
+
+    # the test set is always the final two time series
+    test_data = data_list[8:]
+
+    return train_data, train_events, valid_data, valid_events, test_data
 
 
 # dump the training and test data to disk
