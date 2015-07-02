@@ -1,6 +1,9 @@
 # data directory
 data/
 
+# visualization files
+*.png
+
 # vim swap files
 *.swp
 *.swo
