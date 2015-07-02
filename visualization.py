@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -67,7 +68,8 @@ def visualize_subject(subj_id, sensor_id, num_points=10000):
                                                    data_list,
                                                    events_list),
                                                    start=1):
-        signal = data[sensor_id, :num_points]
+        # given sensors are indexed from 1
+        signal = data[sensor_id - 1, :num_points]
         color_list = get_colors(events)
 
         x = np.arange(signal.shape[0])
@@ -90,14 +92,30 @@ def visualize_subject(subj_id, sensor_id, num_points=10000):
 
     plt.suptitle('Subject %d, Sensor %d' % (subj_id, sensor_id))
     #plt.show()
-    out_file = 'subj%d_series%d_plot.png' % (subj_id, sensor_id)
+    out_file = 'subj%d_sensor%d_plot.png' % (subj_id, sensor_id)
     plt.savefig(out_file, bbox_inches='tight')
 
 
 def main():
-    subj_id = 10
-    sensor_id = 11
-    num_points = 10000
+    parser = argparse.ArgumentParser(description='Visualize the time'
+                                     'series for a given subject and sensor')
+    parser.add_argument('--subj', type=int, metavar='subj_id',
+                        default=1,
+                        choices=range(1, 13),
+                        help='the id of the subject')
+    parser.add_argument('--sensor', type=int, metavar='sensor_id',
+                        default=1,
+                        choices=range(1, 33),
+                        help='the id of the sensor')
+    parser.add_argument('--num', type=int, metavar='num_points',
+                        default=10000,
+                        help='the number of timesteps')
+
+    args = parser.parse_args()
+
+    subj_id = args.subj
+    sensor_id = args.sensor
+    num_points = args.num
 
     visualize_subject(subj_id, sensor_id, num_points=num_points)
 
