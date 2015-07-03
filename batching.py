@@ -32,6 +32,31 @@ def get_permuted_windows(series_list, window_size):
     return series_slices
 
 
+# splits the list of window indices and slices into batches
+# and grabs the fixed-length windows from the corresponding
+# slice from that time-series
+def batch_iterator(bs, W, X, y=None):
+    # total number of batches for this data set and batch size
+    N = len(W) / bs + 1
+    for i in range(N):
+        Wb = W[i * bs:(i + 1) * bs]
+
+        X_batch_list, y_batch_list = [], []
+        # index: which time series to take the window from
+        # s:     the slice to take from that time series
+        for index, s in Wb:
+            X_batch_list.append(X[index][:, s])
+            if y is not None:
+                y_batch_list.append(y[index][:, s])
+
+        # reshape to (batch_size, num_channels, window_size)
+        X_batch = np.vstack(X_batch_list).reshape(bs, X[0].shape[0], -1)
+        if y_batch_list:
+            y_batch = np.vstack(y_batch_list).reshape(bs, y[0].shape[0], -1)
+
+        yield X_batch, y_batch
+
+
 if __name__ == '__main__':
     data = np.arange(5 * 10).reshape(5, 10)
     slices = get_series_window_slices(data.shape[1], 3)

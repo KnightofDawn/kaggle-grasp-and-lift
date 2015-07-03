@@ -28,9 +28,14 @@ def main():
     print('creating fixed-size time-windows of size %d' % (window_size))
     train_slices = batching.get_permuted_windows(train_data, window_size)
     valid_slices = batching.get_permuted_windows(valid_data, window_size)
+    print('there are %d windows for training' % (len(train_slices)))
+    print('there are %d windows for validation' % (len(valid_slices)))
 
+    batch_size = 16
+    num_channels = 32
+    num_actions = 6
     print('building model...')
-    l_out = build_model(8, 32, window_size, 6)
+    l_out = build_model(batch_size, num_channels, window_size, num_actions)
 
     all_layers = layers.get_all_layers(l_out)
     print('this network has %d learnable parameters' %
@@ -42,17 +47,33 @@ def main():
     max_epochs = 5
     lr, mntm = 0.001, 0.9
     print('compiling theano functions...')
-    train_iter = iter_funcs.create_iter_funcs_train(lr, mntm, l_out)
-    valid_iter = iter_funcs.create_iter_funcs_valid(l_out)
+    #train_iter = iter_funcs.create_iter_funcs_train(lr, mntm, l_out)
+    #valid_iter = iter_funcs.create_iter_funcs_valid(l_out)
 
-    data = np.zeros((8, 32, window_size), dtype=np.float32)
-    labels = np.random.randint(0, 2, size=(8, 6)).astype(np.int32)
+    #data = np.zeros((batch_size, num_channels, window_size), dtype=np.float32)
+    #labels = np.random.randint(0, 2, size=(batch_size, 6)).astype(np.int32)
 
     #train_loss, train_output = train_iter(data, labels)
-    valid_loss, valid_output = valid_iter(data, labels)
-    valid_roc = roc_auc_score(labels, valid_output)
-    print('valid loss: %.6f' % (valid_loss))
-    print('valid roc:  %.6f' % (valid_roc))
+    #valid_loss, valid_output = valid_iter(data, labels)
+    #valid_roc = roc_auc_score(labels, valid_output)
+    #print('valid loss: %.6f' % (valid_loss))
+    #print('valid roc:  %.6f' % (valid_roc))
+
+    for epoch in range(max_epochs):
+        print('epoch: %d' % (epoch))
+        print('training...')
+        for Xb, yb in batching.batch_iterator(batch_size,
+                                              train_slices,
+                                              train_data,
+                                              train_events):
+            print Xb.shape, yb.shape
+        print('validation...')
+        for Xb, yb in batching.batch_iterator(batch_size,
+                                              valid_slices,
+                                              valid_data,
+                                              valid_events):
+            print Xb.shape, yb.shape
+
 
 if __name__ == '__main__':
     main()
