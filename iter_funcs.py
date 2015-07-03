@@ -6,13 +6,13 @@ from lasagne import layers
 
 
 def create_iter_funcs_train(lr, mntm, l_out):
-    X = T.tensor4('x')
-    y = T.itensor4('y')
-    X_batch = T.tensor4('x_batch')
-    y_batch = T.itensor4('y_batch')
+    X = T.tensor3('x')
+    y = T.imatrix('y')
+    X_batch = T.tensor3('x_batch')
+    y_batch = T.imatrix('y_batch')
 
-    output_train = layers.get_output(l_out, X_batch)
-    train_loss = T.mean(T.nnet.binary_crossentropy(output_train, y_batch))
+    train_output = layers.get_output(l_out, X_batch)
+    train_loss = T.mean(T.nnet.binary_crossentropy(train_output, y_batch))
 
     all_params = layers.get_all_params(l_out)
     updates = lasagne.updates.nesterov_momentum(
@@ -21,7 +21,7 @@ def create_iter_funcs_train(lr, mntm, l_out):
     train_iter = theano.function(
         inputs=[theano.Param(X_batch),
                 theano.Param(y_batch)],
-        outputs=[train_loss],
+        outputs=[train_loss, train_output],
         updates=updates,
         givens={
             X: X_batch,
@@ -33,18 +33,18 @@ def create_iter_funcs_train(lr, mntm, l_out):
 
 
 def create_iter_funcs_valid(l_out):
-    X = T.tensor4('x')
-    y = T.itensor4('y')
-    X_batch = T.tensor4('x_batch')
-    y_batch = T.itensor4('y_batch')
+    X = T.tensor3('x')
+    y = T.imatrix('y')
+    X_batch = T.tensor3('x_batch')
+    y_batch = T.imatrix('y_batch')
 
-    output_valid = layers.get_output(l_out, X_batch, deterministic=True)
-    valid_loss = T.mean(T.nnet.categorical_crossentropy(output_valid, y_batch))
+    valid_output = layers.get_output(l_out, X_batch, deterministic=True)
+    valid_loss = T.mean(T.nnet.binary_crossentropy(valid_output, y_batch))
 
     valid_iter = theano.function(
         inputs=[theano.Param(X_batch),
                 theano.Param(y_batch)],
-        outputs=[valid_loss, output_valid],
+        outputs=[valid_loss, valid_output],
         givens={
             X: X_batch,
             y: y_batch,
