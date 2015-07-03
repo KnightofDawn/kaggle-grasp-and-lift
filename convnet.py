@@ -1,13 +1,15 @@
 from lasagne import layers
 from lasagne import nonlinearities
 from lasagne import init
-from lasagne.layers import cuda_convnet
+#from lasagne.layers import cuda_convnet
+from lasagne.layers import conv
+from lasagne.layers import pool
 
 #Conv1DLayer = cuda_convnet.Conv1DCCLayer
 #MaxPool1DLayer = cuda_convnet.MaxPool1DCCLayer
 
-Conv1DLayer = cuda_convnet.Conv1DCCLayer
-MaxPool1DLayer = cuda_convnet.MaxPool1DCCLayer
+Conv1DLayer = conv.Conv1DLayer
+MaxPool1DLayer = pool.MaxPool1DLayer
 
 
 def build_model(batch_size,
@@ -49,8 +51,8 @@ def build_model(batch_size,
     l_pool2 = MaxPool1DLayer(
         l_conv2,
         name='pool2',
-        pool_size=(3, 3),
-        stride=(2, 2),
+        pool_size=3,
+        stride=2,
     )
 
     l_conv3 = Conv1DLayer(
