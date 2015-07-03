@@ -22,7 +22,6 @@ def get_permuted_windows(series_list, window_size):
     series_slices = []
     for i, series in enumerate(series_list):
         slices = get_series_window_slices(series.shape[1],
-
                                           window_size)
         # need to mark each slice with the series it came from
         for s in slices:
