@@ -24,7 +24,7 @@ def build_model(batch_size,
     l_conv1 = Conv1DLayer(
         l_in,
         name='conv1',
-        num_filters=32,
+        num_filters=8,
         border_mode='valid',
         filter_size=3,
         nonlinearity=nonlinearities.rectify,
@@ -41,7 +41,7 @@ def build_model(batch_size,
     l_conv2 = Conv1DLayer(
         l_pool1,
         name='conv2',
-        num_filters=64,
+        num_filters=16,
         border_mode='valid',
         filter_size=3,
         nonlinearity=nonlinearities.rectify,
@@ -55,41 +55,42 @@ def build_model(batch_size,
         stride=2,
     )
 
-    l_conv3 = Conv1DLayer(
-        l_pool2,
-        name='conv3',
-        num_filters=128,
-        border_mode='valid',
-        filter_size=3,
-        nonlinearity=nonlinearities.rectify,
-        W=init.Orthogonal(),
-    )
+    #l_conv3 = Conv1DLayer(
+    #    l_pool2,
+    #    name='conv3',
+    #    num_filters=128,
+    #    border_mode='valid',
+    #    filter_size=3,
+    #    nonlinearity=nonlinearities.rectify,
+    #    W=init.Orthogonal(),
+    #)
 
-    l_conv4 = Conv1DLayer(
-        l_conv3,
-        name='conv4',
-        num_filters=128,
-        border_mode='valid',
-        filter_size=3,
-        nonlinearity=nonlinearities.rectify,
-        W=init.Orthogonal(),
-    )
+    #l_conv4 = Conv1DLayer(
+    #    l_conv3,
+    #    name='conv4',
+    #    num_filters=128,
+    #    border_mode='valid',
+    #    filter_size=3,
+    #    nonlinearity=nonlinearities.rectify,
+    #    W=init.Orthogonal(),
+    #)
 
-    l_pool4 = MaxPool1DLayer(
-        l_conv4,
-        name='pool4',
-        pool_size=3,
-        stride=2,
-    )
+    #l_pool4 = MaxPool1DLayer(
+    #    l_conv4,
+    #    name='pool4',
+    #    pool_size=3,
+    #    stride=2,
+    #)
 
     l_dropout_dense1 = layers.DropoutLayer(
-        l_pool4,
+        #l_pool4,
+        l_pool2,
         p=0.5,
     )
 
     l_dense1 = layers.DenseLayer(
         l_dropout_dense1,
-        num_units=512,
+        num_units=128,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
     )
@@ -101,7 +102,7 @@ def build_model(batch_size,
 
     l_dense2 = layers.DenseLayer(
         l_dropout_dense2,
-        num_units=512,
+        num_units=128,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
     )
