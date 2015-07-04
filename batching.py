@@ -47,12 +47,12 @@ def batch_iterator(bs, W, X, y=None):
         for index, s in Wb:
             X_batch_list.append(X[index][:, s])
             if y is not None:
-                y_batch_list.append(y[index][:, s])
+                y_batch_list.append(y[index][:, s][:, -1])
 
         # reshape to (batch_size, num_channels, window_size)
-        X_batch = np.vstack(X_batch_list).reshape(bs, X[0].shape[0], -1)
+        X_batch = np.vstack(X_batch_list).reshape(-1, X[0].shape[0], 100)  # TODO
         if y_batch_list:
-            y_batch = np.vstack(y_batch_list).reshape(bs, y[0].shape[0], -1)
+            y_batch = np.vstack(y_batch_list)
 
         yield X_batch, y_batch
 
