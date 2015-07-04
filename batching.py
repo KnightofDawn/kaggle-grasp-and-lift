@@ -36,6 +36,7 @@ def get_permuted_windows(series_list, window_size):
 # and grabs the fixed-length windows from the corresponding
 # slice from that time-series
 def batch_iterator(bs, W, X, y=None):
+    window_size = W[0][1].stop - W[0][1].start
     # total number of batches for this data set and batch size
     N = len(W) / bs + 1
     for i in range(N):
@@ -50,7 +51,7 @@ def batch_iterator(bs, W, X, y=None):
                 y_batch_list.append(y[index][:, s][:, -1])
 
         # reshape to (batch_size, num_channels, window_size)
-        X_batch = np.vstack(X_batch_list).reshape(-1, X[0].shape[0], 100)  # TODO
+        X_batch = np.vstack(X_batch_list).reshape(-1, X[0].shape[0], window_size)
         if y_batch_list:
             y_batch = np.vstack(y_batch_list)
 
