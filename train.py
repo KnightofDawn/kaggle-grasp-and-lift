@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
+import cPickle as pickle
 import numpy as np
+import theano
 
 from lasagne import layers
 from sklearn.metrics import roc_auc_score
+from time import time
 
 import csp
 import batching
@@ -16,6 +19,7 @@ from convnet import build_model
 def main():
     subj_id = 10
     window_size = 100
+    weights_file = 'data/nets/alex_convnet.pickle'
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject(subj_id)
 
@@ -40,6 +44,7 @@ def main():
 
     train_data = [data.astype(np.float32) for data in train_data]
     valid_data = [data.astype(np.float32) for data in valid_data]
+
     train_events = [events.astype(np.int32) for events in train_events]
     valid_events = [events.astype(np.int32) for events in valid_events]
 
@@ -58,56 +63,92 @@ def main():
         print('Layer %s has output shape %r' %
               (layer.name, layer.output_shape))
 
-    max_epochs = 5
-    lr, mntm = 0.001, 0.9
+    max_epochs = 1000
+    lr = theano.shared(np.cast['float32'](0.01))
+    mntm = 0.9
+    patience = 10
     print('compiling theano functions...')
     train_iter = iter_funcs.create_iter_funcs_train(lr, mntm, l_out)
     valid_iter = iter_funcs.create_iter_funcs_valid(l_out)
     
-    for epoch in range(max_epochs):
-        print('epoch: %d' % (epoch))
-        print('  training...')
-        train_losses, training_outputs = [], []
-        num_batches = len(train_slices) / batch_size + 1
-        for i, (Xb, yb) in enumerate(batching.batch_iterator(batch_size,
-                                                        train_slices,
-                                                        train_data,
-                                                        train_events)):
-            if i < 70000:
-                continue
-            train_loss, train_output = train_iter(Xb, yb)
-            if i % 10000 == 0:
-                print('    processing training minibatch %d of %d with loss %.6f...' %
-                      (i, num_batches, train_loss))
-            train_losses.append(train_loss)
-            for v in train_output:
-                training_outputs.append(v)
-        avg_train_loss = np.mean(train_losses)
-        training_outputs = np.hstack(training_outputs)
-        # yb needs to be all labels in training_data
-        train_roc = roc_auc_score(yb, training_outputs)
-        print('    train loss: %.6f' % (avg_train_loss))
-        print('    train roc:  %.6f' % (train_roc))
+    best_weights = None
+    best_valid_loss = np.inf
+    best_epoch = 0
+    try:
+        for epoch in range(max_epochs):
+            print('epoch: %d' % (epoch))
+            print('  training...')
+            train_losses, training_outputs, training_inputs = [], [], []
+            num_batches = len(train_slices) / batch_size + 1
+            t_train_start = time()
+            for i, (Xb, yb) in enumerate(batching.batch_iterator(batch_size,
+                                                            train_slices,
+                                                            train_data,
+                                                            train_events)):
+                t_start_train_mb = time()
+                train_loss, train_output = train_iter(Xb, yb)
+                if i % 10000 == 0:
+                    print('    processed training minibatch %d of %d in %.2f s...' %
+                          (i, num_batches, time() - t_start_train_mb))
+                train_losses.append(train_loss)
+                assert len(yb) == len(train_output)
+                for input, output in zip(yb, train_output):
+                    training_inputs.append(input)
+                    training_outputs.append(output)
+            avg_train_loss = np.mean(train_losses)
+            
+            training_inputs = np.hstack(training_inputs)
+            training_outputs = np.hstack(training_outputs)
+            train_roc = roc_auc_score(training_inputs, training_outputs)
 
-        print('validation...')
-        valid_losses, valid_outputs = [], []
-        num_batches = len(valid_slices) / batch_size + 1
-        for i, (Xb, yb) in enumerate(batching.batch_iterator(batch_size,
-                                                             valid_slices,
-                                                             valid_data,
-                                                             valid_events)):
-            if i % 10000 == 0:
-                print('    processing validation minibatch %d of %d...' %
-                      (i, num_batches))
-            valid_loss, valid_output = valid_iter(Xb, yb)
-            valid_losses.append(valid_loss)
-            for v in valid_output:
-                valid_outputs.append(v)
-        avg_valid_loss = np.mean(valid_losses)
-        valid_outputs = np.hstack(valid_outputs)
-        valid_roc = roc_auc_score(yb, valid_outputs)
-        print('    valid loss: %.6f' % (avg_valid_loss))
-        print('    valid roc:  %.6f' % (valid_roc))
+            train_duration = time() - t_train_start
+            print('    train loss: %.6f' % (avg_train_loss))
+            print('    train roc:  %.6f' % (train_roc))
+            print('    duration:   %.2f s' % (train_duration))
+
+            print('validation...')
+            valid_losses, valid_outputs, valid_inputs = [], [], []
+            num_batches = len(valid_slices) / batch_size + 1
+            t_valid_start = time()
+            for i, (Xb, yb) in enumerate(batching.batch_iterator(batch_size,
+                                                                 valid_slices,
+                                                                 valid_data,
+                                                                 valid_events)):
+                t_start_valid_mb = time()
+                valid_loss, valid_output = valid_iter(Xb, yb)
+                if i % 10000 == 0:
+                    print('    processing validation minibatch %d of %d in %.2f s...' %
+                          (i, num_batches, time() - t_start_valid_mb))
+                valid_losses.append(valid_loss)
+                assert len(yb) == len(valid_output)
+                for input, output in zip(yb, valid_output):
+                    valid_inputs.append(input)
+                    valid_outputs.append(output)
+            avg_valid_loss = np.mean(valid_losses)
+            valid_inputs = np.hstack(valid_inputs)
+            valid_outputs = np.hstack(valid_outputs)
+            valid_roc = roc_auc_score(valid_inputs, valid_outputs)
+            valid_duration = time() - t_valid_start
+            print('    valid loss: %.6f' % (avg_valid_loss))
+            print('    valid roc:  %.6f' % (valid_roc))
+            print('    duration:   %.2f s' % (valid_duration))
+
+            if avg_valid_loss < best_valid_loss:
+                best_valid_loss = avg_valid_loss
+                best_weights = layers.get_all_param_values(l_out)
+
+            if epoch > best_epoch + patience:
+                best_epoch = epoch
+                new_lr = 0.5 * lr.get_value()
+                lr.set_value(np.cast['float32'](new_lr))
+                print('setting learning rate to %.6f' % (new_lr))
+
+    except KeyboardInterrupt:
+        print('caught Ctrl-C, stopping training...')
+
+    with open(weights_file, 'wb') as ofile:
+        print('saving best weights to %s' % (weights_file))
+        pickle.dump(best_weights, ofile, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == '__main__':
