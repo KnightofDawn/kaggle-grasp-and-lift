@@ -24,7 +24,7 @@ def load_subject_train(subj_id):
         data_list.append(data[channel_names].values.T)
 
         event_names = events.columns[1:]
-        events_list.append(events[event_names].values.T)
+        events_list.append(events[event_names].values.T.astype(np.int32))
 
     return data_list, events_list
 
