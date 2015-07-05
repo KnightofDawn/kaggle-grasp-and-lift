@@ -15,15 +15,10 @@ import utils
 from convnet import build_model
 
 
-def main():
-    subj_id = 1
-    window_size = 1000
-    subsample = 10
-    weights_file = 'data/nets/subj%d_weights_new.pickle' % (subj_id)
+def train_model(subj_id, window_size, subsample, max_epochs):
+    weights_file = 'data/nets/subj%d_weights.pickle' % (subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
-
-    #test_data, test_ids = utils.load_subject_test(subj_id)
 
     print('creating train and validation sets...')
     train_data, train_events, valid_data, valid_events = \
@@ -45,7 +40,6 @@ def main():
     num_channels = 4
     num_actions = 6
     print('building model...')
-    #l_out = build_model(batch_size, num_channels, window_size, num_actions)
     l_out = build_model(None, num_channels,
                         window_size / subsample, num_actions)
 
@@ -56,7 +50,6 @@ def main():
         print('Layer %s has output shape %r' %
               (layer.name, layer.output_shape))
 
-    max_epochs = 50
     lr = theano.shared(np.cast['float32'](0.001))
     mntm = 0.9
     patience = 10
@@ -145,6 +138,15 @@ def main():
         print('saving best weights to %s' % (weights_file))
         pickle.dump(best_weights, ofile, protocol=pickle.HIGHEST_PROTOCOL)
 
+
+def main():
+    subjects = range(2, 7)
+    #subjects = range(7, 13)
+    window_size = 1000
+    subsample = 10
+    max_epochs = 5
+    for subj_id in subjects:
+        train_model(subj_id, window_size, subsample, max_epochs)
 
 if __name__ == '__main__':
     main()
