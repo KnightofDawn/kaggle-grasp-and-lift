@@ -62,7 +62,7 @@ def create_iter_funcs_test(l_out):
 
     test_iter = theano.function(
         inputs=[theano.Param(X_batch)],
-        outputs=[test_output],
+        outputs=test_output,
         givens={
             X: X_batch,
         },
