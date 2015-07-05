@@ -52,3 +52,20 @@ def create_iter_funcs_valid(l_out):
     )
 
     return valid_iter
+
+
+def create_iter_funcs_test(l_out):
+    X = T.tensor3('x')
+    X_batch = T.tensor3('x_batch')
+
+    test_output = layers.get_output(l_out, X_batch, deterministic=True)
+
+    test_iter = theano.function(
+        inputs=[theano.Param(X_batch)],
+        outputs=[test_output],
+        givens={
+            X: X_batch,
+        },
+    )
+
+    return test_iter
