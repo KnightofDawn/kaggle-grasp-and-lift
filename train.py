@@ -20,7 +20,7 @@ from convnet import build_model
 def main():
     subj_id = 1
     window_size = 100
-    weights_file = 'data/nets/subj1_weights.pickle'
+    weights_file = 'data/nets/subj%d_weights.pickle' % (subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject(subj_id)
 
