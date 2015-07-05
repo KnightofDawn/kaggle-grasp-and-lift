@@ -18,7 +18,7 @@ def get_series_window_slices(num_datapoints, window_size):
 # permute the time-windows of all time-series to
 # give a shuffled list of time-windows over all
 # time series
-def get_permuted_windows(series_list, window_size):
+def get_permuted_windows(series_list, window_size, rand=True):
     series_slices = []
     for i, series in enumerate(series_list):
         slices = get_series_window_slices(series.shape[1],
@@ -27,8 +27,9 @@ def get_permuted_windows(series_list, window_size):
         for s in slices:
             series_slices.append((i, s))
 
-    # wish to iterate over the windows in random order
-    random.shuffle(series_slices)
+    # wish to iterate over the windows in random order for training
+    if rand:
+        random.shuffle(series_slices)
     return series_slices
 
 
@@ -54,6 +55,8 @@ def batch_iterator(bs, W, X, y=None):
         X_batch = np.vstack(X_batch_list).reshape(-1, X[0].shape[0], window_size)
         if y_batch_list:
             y_batch = np.vstack(y_batch_list)
+        else:
+            y_batch = None
 
         yield X_batch, y_batch
 
