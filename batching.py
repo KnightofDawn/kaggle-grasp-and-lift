@@ -39,7 +39,7 @@ def get_permuted_windows(series_list, window_size, rand=True):
 def batch_iterator(bs, W, X, y=None):
     window_size = W[0][1].stop - W[0][1].start
     # total number of batches for this data set and batch size
-    N = len(W) / bs + 1
+    N = (len(W) + bs - 1) / bs
     for i in range(N):
         Wb = W[i * bs:(i + 1) * bs]
 
@@ -52,7 +52,8 @@ def batch_iterator(bs, W, X, y=None):
                 y_batch_list.append(y[index][:, s][:, -1])
 
         # reshape to (batch_size, num_channels, window_size)
-        X_batch = np.vstack(X_batch_list).reshape(-1, X[0].shape[0], window_size)
+        X_batch = np.vstack(X_batch_list).reshape(-1,
+                                                  X[0].shape[0], window_size)
         if y_batch_list:
             y_batch = np.vstack(y_batch_list)
         else:
