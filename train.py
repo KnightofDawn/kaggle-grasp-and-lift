@@ -5,11 +5,9 @@ import numpy as np
 import theano
 
 from lasagne import layers
-from scipy.signal import butter, lfilter
 from sklearn.metrics import roc_auc_score
 from time import time
 
-import csp
 import batching
 import iter_funcs
 import utils
@@ -19,13 +17,16 @@ from convnet import build_model
 
 def main():
     subj_id = 1
-    window_size = 100
-    weights_file = 'data/nets/subj%d_weights.pickle' % (subj_id)
+    window_size = 1000
+    subsample = 10
+    weights_file = 'data/nets/subj%d_weights_new.pickle' % (subj_id)
     print('loading time series for subject %d...' % (subj_id))
-    data_list, events_list = utils.load_subject(subj_id)
+    data_list, events_list = utils.load_subject_train(subj_id)
+
+    #test_data, test_ids = utils.load_subject_test(subj_id)
 
     print('creating train and validation sets...')
-    train_data, train_events, valid_data, valid_events, test_data = \
+    train_data, train_events, valid_data, valid_events = \
         utils.split_train_test_data(data_list, events_list,
                                     val_size=2, rand=False)
     print('using %d time series for training' % (len(train_data)))
@@ -36,34 +37,8 @@ def main():
     valid_slices = batching.get_permuted_windows(valid_data, window_size)
     print('there are %d windows for training' % (len(train_slices)))
     print('there are %d windows for validation' % (len(valid_slices)))
-
-    train_data = [1e-6 * data for data in train_data]
-    valid_data = [1e-6 * data for data in valid_data]
-    b, a = butter(5, np.array([7, 30]) / 250., btype='bandpass')
-    train_data = [lfilter(b, a, data) for data in train_data]
-    valid_data = [lfilter(b, a, data) for data in valid_data]
-    #print train_data[7][:, 0]
-    print('computing common spatial patterns...')
-    csp_transform = csp.compute_transform(subj_id, nfilters=4)
-    #print csp_transform
-    print('csp transform shape = %r' % (csp_transform.shape,))
-    train_data = csp.apply_transform(train_data, csp_transform, nwin=250)
-    valid_data = csp.apply_transform(valid_data, csp_transform, nwin=250)
-
-    #print train_data[7][:, 0]
-    train_data = [data.astype(np.float32) for data in train_data]
-    valid_data = [data.astype(np.float32) for data in valid_data]
-
-    train_mean = np.mean(np.hstack(train_data), axis=1).reshape(-1, 1)
-    train_data = [data - train_mean for data in train_data]
-    train_std = np.std(np.hstack(train_data), axis=1).reshape(-1, 1)
-    train_data = [data / train_std for data in train_data]
-
-    valid_data = [data - train_mean for data in valid_data]
-    valid_data = [data / train_std for data in valid_data]
-
-    train_events = [events.astype(np.int32) for events in train_events]
-    valid_events = [events.astype(np.int32) for events in valid_events]
+    train_data, valid_data = \
+        utils.preprocess(subj_id, train_data, valid_data)
 
     batch_size = 16
     # remember to change the number of channels when there is csp!!!
@@ -71,7 +46,8 @@ def main():
     num_actions = 6
     print('building model...')
     #l_out = build_model(batch_size, num_channels, window_size, num_actions)
-    l_out = build_model(None, num_channels, window_size, num_actions)
+    l_out = build_model(None, num_channels,
+                        window_size / subsample, num_actions)
 
     all_layers = layers.get_all_layers(l_out)
     print('this network has %d learnable parameters' %
@@ -98,14 +74,16 @@ def main():
             train_losses, training_outputs, training_inputs = [], [], []
             num_batches = len(train_slices) / batch_size + 1
             t_train_start = time()
-            for i, (Xb, yb) in enumerate(batching.batch_iterator(batch_size,
-                                                                 train_slices,
-                                                                 train_data,
-                                                                 train_events)):
-                train_loss, train_output = train_iter(Xb, yb)
+            for i, (Xb, yb) in enumerate(
+                batching.batch_iterator(batch_size,
+                                        train_slices,
+                                        train_data,
+                                        train_events)):
+                train_loss, train_output = \
+                    train_iter(Xb[:, :, ::subsample], yb)
                 if (i + 1) % 10000 == 0:
                     print('    processed training minibatch %d of %d...' %
-                          (i, num_batches))
+                          (i + 1, num_batches))
                 train_losses.append(train_loss)
                 assert len(yb) == len(train_output)
                 for input, output in zip(yb, train_output):
@@ -126,14 +104,16 @@ def main():
             valid_losses, valid_outputs, valid_inputs = [], [], []
             num_batches = len(valid_slices) / batch_size + 1
             t_valid_start = time()
-            for i, (Xb, yb) in enumerate(batching.batch_iterator(batch_size,
-                                                                 valid_slices,
-                                                                 valid_data,
-                                                                 valid_events)):
-                valid_loss, valid_output = valid_iter(Xb, yb)
+            for i, (Xb, yb) in enumerate(
+                batching.batch_iterator(batch_size,
+                                        valid_slices,
+                                        valid_data,
+                                        valid_events)):
+                valid_loss, valid_output = \
+                    valid_iter(Xb[:, :, ::subsample], yb)
                 if (i + 1) % 10000 == 0:
                     print('    processing validation minibatch %d of %d...' %
-                          (i, num_batches))
+                          (i + 1, num_batches))
                 valid_losses.append(valid_loss)
                 assert len(yb) == len(valid_output)
                 for input, output in zip(yb, valid_output):
