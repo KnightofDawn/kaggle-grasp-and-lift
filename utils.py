@@ -120,7 +120,7 @@ def split_train_test_data(data_list, events_list, val_size=2, rand=False):
         val_ind = np.random.choice(8, size=val_size, replace=False)
     # just use the last two time series for validation
     else:
-        val_ind = np.array([6, 7])
+        val_ind = np.arange(8 - val_size, 8)
 
     train_data, valid_data = [], []
     train_events, valid_events = [], []
