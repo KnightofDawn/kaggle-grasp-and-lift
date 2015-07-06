@@ -7,10 +7,7 @@ from mne.epochs import concatenate_epochs
 from mne import create_info, find_events, Epochs, concatenate_raws, pick_types
 from mne.decoding import CSP
 from glob import glob
-
-from scipy.signal import butter, lfilter, convolve, boxcar
-
-
+from scipy.signal import butter, lfilter, convolve, boxcar 
 def create_mne_raw_object(fname, read_events=True):
     """Create a mne raw instance from csv file"""
     # Read EEG file
@@ -93,15 +90,23 @@ def compute_transform(subj_id, nfilters=4):
     return csp.filters_[:nfilters]
 
 
-def apply_transform(series_list, transform, nwin=250):
+def apply_transform(series_list, transform):
     series_list_out = []
-    nfilters = transform.shape[0]
     for series in series_list:
-        transformed = np.dot(transform, series) ** 2
-        series_out = np.empty(transformed.shape)
-        for i in range(nfilters):
-            series_out[i] = np.log(convolve(transformed[i], boxcar(nwin), 'full'))[0:transformed.shape[1]]
+        transformed = np.dot(transform, series)
+        series_list_out.append(transformed)
 
+    return series_list_out
+
+
+def post_csp(series_list, nwin=250):
+    series_list_out = []
+    series_list = [series ** 2 for series in series_list]
+    nfilters = series.shape[0]
+    for series in series_list:
+        series_out = np.empty(series.shape)
+        for i in range(nfilters):
+            series_out[i] = np.log(convolve(series[i], boxcar(nwin), 'full'))[0:series.shape[1]]
         series_list_out.append(series_out)
 
     return series_list_out

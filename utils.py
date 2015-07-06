@@ -45,7 +45,7 @@ def load_subject_test(subj_id):
     return data_list, ids_list
 
 
-def preprocess(subj_id, train_data, test_data):
+def preprocess(subj_id, train_data, test_data, compute_csp=True):
     train_data = [1e-6 * data for data in train_data]
     test_data = [1e-6 * data for data in test_data]
 
@@ -53,11 +53,17 @@ def preprocess(subj_id, train_data, test_data):
     train_data = [lfilter(b, a, data) for data in train_data]
     test_data = [lfilter(b, a, data) for data in test_data]
 
-    print('computing common spatial patterns...')
-    csp_transform = csp.compute_transform(subj_id, nfilters=4)
-    print('csp transform shape = %r' % (csp_transform.shape,))
-    train_data = csp.apply_transform(train_data, csp_transform, nwin=250)
-    test_data = csp.apply_transform(test_data, csp_transform, nwin=250)
+    if compute_csp:
+        print('computing common spatial patterns...')
+        csp_transform = csp.compute_transform(subj_id, nfilters=4)
+        print('csp transform shape = %r' % (csp_transform.shape,))
+        train_data = csp.apply_transform(train_data, csp_transform)
+        test_data = csp.apply_transform(test_data, csp_transform)
+
+    print('boxcar smoothing...')
+    train_data = csp.post_csp(train_data, nwin=250)
+    test_data = csp.post_csp(test_data, nwin=250)
+
     train_data = [data.astype(np.float32) for data in train_data]
     test_data = [data.astype(np.float32) for data in test_data]
 

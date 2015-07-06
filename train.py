@@ -16,7 +16,7 @@ from convnet import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs):
-    weights_file = 'data/nets/subj%d_weights.pickle' % (subj_id)
+    weights_file = 'data/nets/subj%d_weights_nocsp.pickle' % (subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
 
@@ -33,11 +33,12 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     print('there are %d windows for training' % (len(train_slices)))
     print('there are %d windows for validation' % (len(valid_slices)))
     train_data, valid_data = \
-        utils.preprocess(subj_id, train_data, valid_data)
+        utils.preprocess(subj_id, train_data, valid_data, compute_csp=False)
 
     batch_size = 16
     # remember to change the number of channels when there is csp!!!
-    num_channels = 4
+    #num_channels = 4
+    num_channels = 32
     num_actions = 6
     print('building model...')
     l_out = build_model(None, num_channels,
@@ -140,8 +141,8 @@ def train_model(subj_id, window_size, subsample, max_epochs):
 
 
 def main():
-    subjects = range(2, 7)
-    #subjects = range(7, 13)
+    #subjects = range(2, 7)
+    subjects = range(7, 13)
     window_size = 1000
     subsample = 10
     max_epochs = 5
