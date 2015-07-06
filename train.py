@@ -16,14 +16,14 @@ from convnet import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs):
-    weights_file = 'data/nets/subj%d_weights_nocsp.pickle' % (subj_id)
+    weights_file = 'data/nets/subj%d_weights_novalid.pickle' % (subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
 
     print('creating train and validation sets...')
     train_data, train_events, valid_data, valid_events = \
         utils.split_train_test_data(data_list, events_list,
-                                    val_size=2, rand=False)
+                                    val_size=0, rand=False)
     print('using %d time series for training' % (len(train_data)))
     print('using %d time series for validation' % (len(valid_data)))
 
@@ -33,12 +33,12 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     print('there are %d windows for training' % (len(train_slices)))
     print('there are %d windows for validation' % (len(valid_slices)))
     train_data, valid_data = \
-        utils.preprocess(subj_id, train_data, valid_data, compute_csp=False)
+        utils.preprocess(subj_id, train_data, valid_data, compute_csp=True)
 
     batch_size = 16
     # remember to change the number of channels when there is csp!!!
-    #num_channels = 4
-    num_channels = 32
+    num_channels = 4
+    #num_channels = 32
     num_actions = 6
     print('building model...')
     l_out = build_model(None, num_channels,
@@ -73,6 +73,9 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                                         train_slices,
                                         train_data,
                                         train_events)):
+                # hack for faster debugging
+                #if i < 80000:
+                #    continue
                 train_loss, train_output = \
                     train_iter(Xb[:, :, ::subsample], yb)
                 if (i + 1) % 10000 == 0:
@@ -113,16 +116,29 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 for input, output in zip(yb, valid_output):
                     valid_inputs.append(input)
                     valid_outputs.append(output)
-            avg_valid_loss = np.mean(valid_losses)
-            valid_inputs = np.hstack(valid_inputs)
-            valid_outputs = np.hstack(valid_outputs)
-            valid_roc = roc_auc_score(valid_inputs, valid_outputs)
-            valid_duration = time() - t_valid_start
-            print('    valid loss: %.6f' % (avg_valid_loss))
-            print('    valid roc:  %.6f' % (valid_roc))
-            print('    duration:   %.2f s' % (valid_duration))
 
-            if avg_valid_loss < best_valid_loss:
+            # allow training without validation
+            if valid_losses:
+                avg_valid_loss = np.mean(valid_losses)
+                valid_inputs = np.hstack(valid_inputs)
+                valid_outputs = np.hstack(valid_outputs)
+                valid_roc = roc_auc_score(valid_inputs, valid_outputs)
+                valid_duration = time() - t_valid_start
+                print('    valid loss: %.6f' % (avg_valid_loss))
+                print('    valid roc:  %.6f' % (valid_roc))
+                print('    duration:   %.2f s' % (valid_duration))
+            else:
+                print('    no validation...')
+
+            # if we are not doing validation we always want the latest weights
+            if not valid_losses:
+                best_epoch = epoch
+                model_train_loss = avg_train_loss
+                best_valid_loss = -1.
+                best_weights = layers.get_all_param_values(l_out)
+            elif avg_valid_loss < best_valid_loss:
+                best_epoch = epoch
+                model_train_loss = avg_train_loss
                 best_valid_loss = avg_valid_loss
                 best_weights = layers.get_all_param_values(l_out)
 
@@ -139,15 +155,31 @@ def train_model(subj_id, window_size, subsample, max_epochs):
         print('saving best weights to %s' % (weights_file))
         pickle.dump(best_weights, ofile, protocol=pickle.HIGHEST_PROTOCOL)
 
+    return model_train_loss, best_valid_loss
+
 
 def main():
-    #subjects = range(2, 7)
-    subjects = range(7, 13)
+    subjects = range(1, 7)
+    #subjects = range(7, 13)
     window_size = 1000
     subsample = 10
-    max_epochs = 5
+    max_epochs = 4
+    model_train_losses, model_valid_losses = [], []
     for subj_id in subjects:
-        train_model(subj_id, window_size, subsample, max_epochs)
+        model_train_loss, model_valid_loss = \
+            train_model(subj_id, window_size, subsample, max_epochs)
+        print('\n%s subject %d %s' % ('*' * 10, subj_id, '*' * 10))
+        print('model training loss = %.5f' % (model_train_loss))
+        print('model valid loss    = %.5f' % (model_valid_loss))
+        print('%s subject %d %s\n' % ('*' * 10, subj_id, '*' * 10))
+        model_train_losses.append(model_train_loss)
+        model_valid_losses.append(model_valid_loss)
+
+    print('average loss over subjects {%s}:' %
+          (' '.join([str(s) for s in subjects])))
+    print('  training:   %.5f' % (np.mean(model_train_losses)))
+    print('  validation: %.5f' % (np.mean(model_valid_losses)))
+
 
 if __name__ == '__main__':
     main()
