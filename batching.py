@@ -37,6 +37,8 @@ def get_permuted_windows(series_list, window_size, rand=True):
 # and grabs the fixed-length windows from the corresponding
 # slice from that time-series
 def batch_iterator(bs, W, X, y=None):
+    if not W:
+        raise StopIteration
     window_size = W[0][1].stop - W[0][1].start
     # total number of batches for this data set and batch size
     N = (len(W) + bs - 1) / bs
