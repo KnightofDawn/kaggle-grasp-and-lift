@@ -134,10 +134,14 @@ def train_model(subj_id, window_size, subsample, max_epochs):
             if not valid_losses:
                 best_epoch = epoch
                 model_train_loss = avg_train_loss
+                model_train_roc = train_roc
+                model_valid_roc = -1.
                 best_valid_loss = -1.
                 best_weights = layers.get_all_param_values(l_out)
             elif avg_valid_loss < best_valid_loss:
                 best_epoch = epoch
+                model_train_roc = train_roc
+                model_valid_roc = valid_roc
                 model_train_loss = avg_train_loss
                 best_valid_loss = avg_valid_loss
                 best_weights = layers.get_all_param_values(l_out)
@@ -155,7 +159,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
         print('saving best weights to %s' % (weights_file))
         pickle.dump(best_weights, ofile, protocol=pickle.HIGHEST_PROTOCOL)
 
-    return model_train_loss, best_valid_loss
+    return model_train_loss, best_valid_loss, model_train_roc, model_valid_roc
 
 
 def main():
@@ -163,22 +167,29 @@ def main():
     #subjects = range(7, 13)
     window_size = 1000
     subsample = 10
-    max_epochs = 4
+    max_epochs = 2
     model_train_losses, model_valid_losses = [], []
+    model_train_rocs, model_valid_rocs = [], []
     for subj_id in subjects:
-        model_train_loss, model_valid_loss = \
+        model_train_loss, model_valid_loss, model_train_roc, model_valid_roc =\
             train_model(subj_id, window_size, subsample, max_epochs)
         print('\n%s subject %d %s' % ('*' * 10, subj_id, '*' * 10))
         print('model training loss = %.5f' % (model_train_loss))
         print('model valid loss    = %.5f' % (model_valid_loss))
+        print('model training roc  = %.5f' % (model_train_roc))
+        print('model valid roc     = %.5f' % (model_valid_roc))
         print('%s subject %d %s\n' % ('*' * 10, subj_id, '*' * 10))
         model_train_losses.append(model_train_loss)
         model_valid_losses.append(model_valid_loss)
+        model_train_rocs.append(model_train_roc)
+        model_valid_rocs.append(model_valid_roc)
 
     print('average loss over subjects {%s}:' %
           (' '.join([str(s) for s in subjects])))
-    print('  training:   %.5f' % (np.mean(model_train_losses)))
-    print('  validation: %.5f' % (np.mean(model_valid_losses)))
+    print('  training loss:   %.5f' % (np.mean(model_train_losses)))
+    print('  validation loss: %.5f' % (np.mean(model_valid_losses)))
+    print('  training roc:    %.5f' % (np.mean(model_train_rocs)))
+    print('  validation roc:  %.5f' % (np.mean(model_valid_rocs)))
 
 
 if __name__ == '__main__':
