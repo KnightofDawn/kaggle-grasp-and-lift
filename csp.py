@@ -102,8 +102,8 @@ def apply_transform(series_list, transform):
 def post_csp(series_list, nwin=250):
     series_list_out = []
     series_list = [series ** 2 for series in series_list]
-    nfilters = series.shape[0]
     for series in series_list:
+        nfilters = series.shape[0]
         series_out = np.empty(series.shape)
         for i in range(nfilters):
             series_out[i] = np.log(convolve(series[i], boxcar(nwin), 'full'))[0:series.shape[1]]
