@@ -4,11 +4,11 @@
 def make_submission():
     subjects = range(1, 13)
     submission_file = 'data/submissions/convnet.csv'
-    header = ['HandStart', 'FirstDigitTouch', 'BothStartLoadPhase',
+    header = ['id', 'HandStart', 'FirstDigitTouch', 'BothStartLoadPhase',
               'LiftOff', 'Replace', 'BothReleased']
     print('generating submission file: %s' % (submission_file))
     with open(submission_file, 'w') as ofile:
-        ofile.write('%s\n' % header)
+        ofile.write('%s\n' % ','.join(header))
         for subj_id in subjects:
             pred_file = 'data/predictions/subj%d_preds.csv' % (subj_id)
             print('  reading probabilities from %s' % (pred_file))
