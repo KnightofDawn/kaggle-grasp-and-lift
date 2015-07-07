@@ -54,8 +54,7 @@ def get_colors(events):
 # visualize the eight time series for a given subject, with the
 # events highlighted in color
 def visualize_subject(subj_id, sensor_id, num_points=10000):
-    series_range = range(1, 9)
-    data_list, events_list = utils.load_subject(subj_id, series_range)
+    data_list, events_list = utils.load_subject_train(subj_id)
     print('visualizing time series for subject %d and sensor %d' %
           (subj_id, sensor_id))
 
