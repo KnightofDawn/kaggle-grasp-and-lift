@@ -12,18 +12,19 @@ import batching
 import iter_funcs
 import utils
 
-from convnet import build_model
+#from convnet import build_model
+from convnet_small import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs):
-    weights_file = 'data/nets/subj%d_weights_novalid.pickle' % (subj_id)
+    weights_file = 'data/nets/subj%d_weights_small.pickle' % (subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
 
     print('creating train and validation sets...')
     train_data, train_events, valid_data, valid_events = \
         utils.split_train_test_data(data_list, events_list,
-                                    val_size=0, rand=False)
+                                    val_size=2, rand=False)
     print('using %d time series for training' % (len(train_data)))
     print('using %d time series for validation' % (len(valid_data)))
 
@@ -35,7 +36,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     train_data, valid_data = \
         utils.preprocess(subj_id, train_data, valid_data, compute_csp=True)
 
-    batch_size = 16
+    batch_size = 128
     # remember to change the number of channels when there is csp!!!
     num_channels = 4
     #num_channels = 32
@@ -53,7 +54,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
 
     lr = theano.shared(np.cast['float32'](0.001))
     mntm = 0.9
-    patience = 10
+    patience = 2
     print('compiling theano functions...')
     train_iter = iter_funcs.create_iter_funcs_train(lr, mntm, l_out)
     valid_iter = iter_funcs.create_iter_funcs_valid(l_out)
@@ -97,7 +98,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
             print('    train roc:  %.6f' % (train_roc))
             print('    duration:   %.2f s' % (train_duration))
 
-            print('validation...')
+            print('  validation...')
             valid_losses, valid_outputs, valid_inputs = [], [], []
             num_batches = len(valid_slices) / batch_size + 1
             t_valid_start = time()
@@ -167,7 +168,7 @@ def main():
     #subjects = range(7, 13)
     window_size = 1000
     subsample = 10
-    max_epochs = 2
+    max_epochs = 10
     model_train_losses, model_valid_losses = [], []
     model_train_rocs, model_valid_rocs = [], []
     for subj_id in subjects:
