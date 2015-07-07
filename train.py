@@ -13,11 +13,12 @@ import iter_funcs
 import utils
 
 #from convnet import build_model
-from convnet_small import build_model
+#from convnet_small import build_model
+from convnet_deep import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs):
-    weights_file = 'data/nets/subj%d_weights_small.pickle' % (subj_id)
+    weights_file = 'data/nets/subj%d_weights_deep.pickle' % (subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
 
@@ -36,7 +37,8 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     train_data, valid_data = \
         utils.preprocess(subj_id, train_data, valid_data, compute_csp=True)
 
-    batch_size = 128
+    #batch_size = 128
+    batch_size = 16
     # remember to change the number of channels when there is csp!!!
     num_channels = 4
     #num_channels = 32
@@ -110,7 +112,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 valid_loss, valid_output = \
                     valid_iter(Xb[:, :, ::subsample], yb)
                 if (i + 1) % 10000 == 0:
-                    print('    processing validation minibatch %d of %d...' %
+                    print('    processed validation minibatch %d of %d...' %
                           (i + 1, num_batches))
                 valid_losses.append(valid_loss)
                 assert len(yb) == len(valid_output)
@@ -164,11 +166,13 @@ def train_model(subj_id, window_size, subsample, max_epochs):
 
 
 def main():
-    subjects = range(1, 7)
-    #subjects = range(7, 13)
-    window_size = 1000
+    #subjects = range(9, 10)
+    subjects = range(1, 6)
+    #subjects = range(6, 13)
+    #window_size = 1000
+    window_size = 2000
     subsample = 10
-    max_epochs = 10
+    max_epochs = 2
     model_train_losses, model_valid_losses = [], []
     model_train_rocs, model_valid_rocs = [], []
     for subj_id in subjects:
