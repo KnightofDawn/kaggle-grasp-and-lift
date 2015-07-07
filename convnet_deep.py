@@ -55,8 +55,36 @@ def build_model(batch_size,
         stride=2,
     )
 
-    l_dropout_dense1 = layers.DropoutLayer(
+    l_conv3 = Conv1DLayer(
         l_pool2,
+        name='conv3',
+        num_filters=32,
+        border_mode='valid',
+        filter_size=3,
+        nonlinearity=nonlinearities.rectify,
+        W=init.Orthogonal(),
+    )
+
+    l_conv4 = Conv1DLayer(
+        l_conv3,
+        name='conv4',
+        num_filters=32,
+        border_mode='valid',
+        filter_size=3,
+        nonlinearity=nonlinearities.rectify,
+        W=init.Orthogonal(),
+    )
+
+    l_pool4 = MaxPool1DLayer(
+        l_conv4,
+        name='pool4',
+        pool_size=3,
+        stride=2,
+    )
+
+    l_dropout_dense1 = layers.DropoutLayer(
+        l_pool4,
+        #l_pool2,
         p=0.5,
     )
 
