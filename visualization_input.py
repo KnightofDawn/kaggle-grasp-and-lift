@@ -20,8 +20,8 @@ def visualize_subject(subj_id, num_points=10000):
     print('using %d time series for training' % (len(train_data)))
     print('using %d time series for validation' % (len(valid_data)))
     print('preprocessing validation data...')
-    #train_data, valid_data = \
-    #    utils.preprocess(subj_id, train_data, valid_data, compute_csp=True)
+    train_data, valid_data = \
+        utils.preprocess(subj_id, train_data, valid_data, compute_csp=True)
     print('preprocessing test data...')
     train_data, test_data = \
         utils.preprocess(subj_id, train_data, test_data)
