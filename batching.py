@@ -33,10 +33,17 @@ def get_permuted_windows(series_list, window_size, rand=True):
     return series_slices
 
 
+def normalize_window(X):
+    X_min = np.min(X, axis=0)
+    X_max = np.max(X, axis=0)
+
+    return (X - X_min) / (X_max - X_min)
+
+
 # splits the list of window indices and slices into batches
 # and grabs the fixed-length windows from the corresponding
 # slice from that time-series
-def batch_iterator(bs, W, X, y=None):
+def batch_iterator(bs, W, X, y=None, normalize_window=False):
     if not W:
         raise StopIteration
     window_size = W[0][1].stop - W[0][1].start
@@ -49,7 +56,11 @@ def batch_iterator(bs, W, X, y=None):
         # index: which time series to take the window from
         # s:     the slice to take from that time series
         for index, s in Wb:
-            X_batch_list.append(X[index][:, s])
+            if normalize_window:
+                X_window = normalize_window(X[index][:, s])
+            else:
+                X_window = X[index][:, s]
+            X_batch_list.append(X_window)
             if y is not None:
                 y_batch_list.append(y[index][:, s][:, -1])
 
@@ -62,6 +73,14 @@ def batch_iterator(bs, W, X, y=None):
             y_batch = None
 
         yield X_batch, y_batch
+
+
+def compute_geometric_mean(mat_list):
+    log_mat_sum = np.sum(np.log(np.array(mat_list)), axis=0)
+    log_mat_sum /= len(mat_list)
+    geom_mean = np.power(np.e, log_mat_sum)
+
+    return geom_mean
 
 
 if __name__ == '__main__':
