@@ -14,11 +14,12 @@ import utils
 
 #from convnet import build_model
 #from convnet_small import build_model
-from convnet_deep import build_model
+#from convnet_deep import build_model
+from convnet_deep_drop import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs):
-    weights_file = 'data/nets/subj%d_weights_deep.pickle' % (subj_id)
+    weights_file = 'data/nets/subj%d_weights_nopreproc.pickle' % (subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
 
@@ -34,14 +35,19 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     valid_slices = batching.get_permuted_windows(valid_data, window_size)
     print('there are %d windows for training' % (len(train_slices)))
     print('there are %d windows for validation' % (len(valid_slices)))
+    #train_data, valid_data = \
+    #    utils.preprocess(subj_id, train_data, valid_data, compute_csp=True)
     train_data, valid_data = \
-        utils.preprocess(subj_id, train_data, valid_data, compute_csp=True)
+        utils.preprocess(subj_id, train_data, valid_data,
+                         compute_csp=False,
+                         butter_smooth=False,
+                         boxcar_smooth=False)
 
-    #batch_size = 128
-    batch_size = 16
+    batch_size = 128
+    #batch_size = 16
     # remember to change the number of channels when there is csp!!!
-    num_channels = 4
-    #num_channels = 32
+    #num_channels = 4
+    num_channels = 32
     num_actions = 6
     print('building model...')
     l_out = build_model(None, num_channels,
@@ -64,12 +70,17 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     best_weights = None
     best_valid_loss = np.inf
     best_epoch = 0
+    #sampling = np.array(range(0, 500, 32) +  # 16 numbers
+    #                    range(500, 1000, 15) +  # 34 numbers
+    #                    range(1000, 1500, 10) +  # 50 numbers
+    #                    range(1500, 2000, 5))  # 100 numbers
     try:
         for epoch in range(max_epochs):
             print('epoch: %d' % (epoch))
             print('  training...')
             train_losses, training_outputs, training_inputs = [], [], []
-            num_batches = len(train_slices) / batch_size + 1
+            #num_batches = len(train_slices) / batch_size + 1
+            num_batches = (len(train_slices) + batch_size - 1) / batch_size
             t_train_start = time()
             for i, (Xb, yb) in enumerate(
                 batching.batch_iterator(batch_size,
@@ -77,10 +88,11 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                                         train_data,
                                         train_events)):
                 # hack for faster debugging
-                #if i < 80000:
+                #if i < 70000:
                 #    continue
                 train_loss, train_output = \
                     train_iter(Xb[:, :, ::subsample], yb)
+                #train_iter(Xb[:, :, sampling], yb)
                 if (i + 1) % 10000 == 0:
                     print('    processed training minibatch %d of %d...' %
                           (i + 1, num_batches))
@@ -102,15 +114,25 @@ def train_model(subj_id, window_size, subsample, max_epochs):
 
             print('  validation...')
             valid_losses, valid_outputs, valid_inputs = [], [], []
-            num_batches = len(valid_slices) / batch_size + 1
+            num_batches = (len(valid_slices) + batch_size - 1) / batch_size
             t_valid_start = time()
             for i, (Xb, yb) in enumerate(
                 batching.batch_iterator(batch_size,
                                         valid_slices,
                                         valid_data,
                                         valid_events)):
+                #augmented_valid_losses, augmented_valid_outputs = [], []
+                #for offset in range(0, subsample):
+                #    valid_loss, valid_output = \
+                #        valid_iter(Xb[:, :, offset::subsample], yb)
+                #    augmented_valid_losses.append(valid_loss)
+                #    augmented_valid_outputs.append(valid_output)
+                #valid_loss = np.mean(augmented_valid_losses)
+                #valid_output = batching.compute_geometric_mean(
+                #    augmented_valid_outputs)
                 valid_loss, valid_output = \
                     valid_iter(Xb[:, :, ::subsample], yb)
+
                 if (i + 1) % 10000 == 0:
                     print('    processed validation minibatch %d of %d...' %
                           (i + 1, num_batches))
@@ -166,13 +188,14 @@ def train_model(subj_id, window_size, subsample, max_epochs):
 
 
 def main():
-    #subjects = range(9, 10)
-    subjects = range(1, 6)
+    subjects = range(1, 2)
+    #subjects = range(1, 6)
     #subjects = range(6, 13)
     #window_size = 1000
     window_size = 2000
     subsample = 10
-    max_epochs = 2
+    #max_epochs = 2
+    max_epochs = 5
     model_train_losses, model_valid_losses = [], []
     model_train_rocs, model_valid_rocs = [], []
     for subj_id in subjects:
