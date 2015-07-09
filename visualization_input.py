@@ -19,12 +19,13 @@ def visualize_subject(subj_id, num_points=10000):
                                     val_size=2, rand=False)
     print('using %d time series for training' % (len(train_data)))
     print('using %d time series for validation' % (len(valid_data)))
+    original_train_data = train_data[:]
     print('preprocessing validation data...')
     train_data, valid_data = \
         utils.preprocess(subj_id, train_data, valid_data, compute_csp=True)
     print('preprocessing test data...')
     train_data, test_data = \
-        utils.preprocess(subj_id, train_data, test_data)
+        utils.preprocess(subj_id, original_train_data, test_data)
 
     fig, axes = plt.subplots(10, 4, sharex=True)
     fig.set_size_inches(20, 15)
@@ -39,9 +40,15 @@ def visualize_subject(subj_id, num_points=10000):
         print('plotting train time-series %d...' % (series_id + 1))
         for channel_id in range(0, 4):
             ax = axes[series_id, channel_id]
-            signal = train_data[series_id][channel_id][
-                start_offset:start_offset + num_points]
-            events = train_events[series_id]
+            if series_id < 6:
+                signal = train_data[series_id][channel_id][
+                    start_offset:start_offset + num_points]
+                events = train_events[series_id]
+            else:
+                signal = valid_data[series_id - 6][channel_id][
+                    start_offset:start_offset + num_points]
+                events = valid_events[series_id - 6]
+
             color_list = visualization.get_colors(events)
 
             x = np.arange(signal.shape[0])
