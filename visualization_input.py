@@ -8,6 +8,7 @@ import visualization
 
 
 def visualize_subject(subj_id, num_points=10000):
+    start_offset = 2000
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
     test_data, test_ids = utils.load_subject_test(subj_id)
@@ -35,11 +36,11 @@ def visualize_subject(subj_id, num_points=10000):
     cmap = cmap.from_list('Custom cmap', cmap_list, cmap.N)
 
     for series_id in range(0, 8):
-        continue
         print('plotting train time-series %d...' % (series_id + 1))
         for channel_id in range(0, 4):
             ax = axes[series_id, channel_id]
-            signal = train_data[series_id][channel_id][:num_points]
+            signal = train_data[series_id][channel_id][
+                start_offset:start_offset + num_points]
             events = train_events[series_id]
             color_list = visualization.get_colors(events)
 
@@ -59,11 +60,11 @@ def visualize_subject(subj_id, num_points=10000):
         print('plotting train time-series %d...' % (series_id + 1))
         for channel_id in range(0, 4):
             ax = axes[series_id, channel_id]
-            signal = test_data[9 - series_id][channel_id][:num_points]
+            signal = test_data[9 - series_id][channel_id][
+                start_offset:start_offset + num_points]
             x = np.arange(signal.shape[0])
             ax.plot(x, signal, color=cmap_list[0])
             ax.set_xlim((x.min(), x.max()))
-            print signal.min(), signal.max(), signal.argmin(), signal.argmax()
             ax.set_ylim((signal.min(), signal.max()))
             ax.set_title('Channel %d' % (channel_id))
 
