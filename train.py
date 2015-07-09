@@ -12,10 +12,10 @@ import batching
 import iter_funcs
 import utils
 
-#from convnet import build_model
+from convnet import build_model
 #from convnet_small import build_model
 #from convnet_deep import build_model
-from convnet_deep_drop import build_model
+#from convnet_deep_drop import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs):
@@ -91,7 +91,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 #if i < 70000:
                 #    continue
                 train_loss, train_output = \
-                    train_iter(Xb[:, :, ::subsample], yb)
+                    train_iter(Xb[:, :, (subsample - 1)::subsample], yb)
                 #train_iter(Xb[:, :, sampling], yb)
                 if (i + 1) % 10000 == 0:
                     print('    processed training minibatch %d of %d...' %
@@ -131,7 +131,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 #valid_output = batching.compute_geometric_mean(
                 #    augmented_valid_outputs)
                 valid_loss, valid_output = \
-                    valid_iter(Xb[:, :, ::subsample], yb)
+                    valid_iter(Xb[:, :, (subsample - 1)::subsample], yb)
 
                 if (i + 1) % 10000 == 0:
                     print('    processed validation minibatch %d of %d...' %
@@ -191,8 +191,8 @@ def main():
     subjects = range(1, 2)
     #subjects = range(1, 6)
     #subjects = range(6, 13)
-    #window_size = 1000
-    window_size = 2000
+    window_size = 1000
+    #window_size = 2000
     subsample = 10
     #max_epochs = 2
     max_epochs = 5
