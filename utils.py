@@ -45,13 +45,15 @@ def load_subject_test(subj_id):
     return data_list, ids_list
 
 
-def preprocess(subj_id, train_data, test_data, compute_csp=True):
+def preprocess(subj_id, train_data, test_data, compute_csp=True,
+               butter_smooth=True, boxcar_smooth=True):
     train_data = [1e-6 * data for data in train_data]
     test_data = [1e-6 * data for data in test_data]
 
-    b, a = butter(5, np.array([7, 30]) / 250., btype='bandpass')
-    train_data = [lfilter(b, a, data) for data in train_data]
-    test_data = [lfilter(b, a, data) for data in test_data]
+    if butter_smooth:
+        b, a = butter(5, np.array([7, 30]) / 250., btype='bandpass')
+        train_data = [lfilter(b, a, data) for data in train_data]
+        test_data = [lfilter(b, a, data) for data in test_data]
 
     if compute_csp:
         print('computing common spatial patterns...')
@@ -60,9 +62,10 @@ def preprocess(subj_id, train_data, test_data, compute_csp=True):
         train_data = csp.apply_transform(train_data, csp_transform)
         test_data = csp.apply_transform(test_data, csp_transform)
 
-    print('boxcar smoothing...')
-    train_data = csp.post_csp(train_data, nwin=250)
-    test_data = csp.post_csp(test_data, nwin=250)
+    if boxcar_smooth:
+        print('boxcar smoothing...')
+        train_data = csp.post_csp(train_data, nwin=250)
+        test_data = csp.post_csp(test_data, nwin=250)
 
     train_data = [data.astype(np.float32) for data in train_data]
     test_data = [data.astype(np.float32) for data in test_data]
