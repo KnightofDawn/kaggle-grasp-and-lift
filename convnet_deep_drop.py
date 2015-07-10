@@ -18,7 +18,7 @@ def build_model(batch_size,
                 output_dim,):
     l_in = layers.InputLayer(
         shape=(batch_size, num_channels, input_length),
-        name='l_in',
+        name='input',
     )
 
     l_conv1 = Conv1DLayer(
@@ -40,7 +40,8 @@ def build_model(batch_size,
 
     l_dropout_conv2 = layers.DropoutLayer(
         l_pool1,
-        p=0.1,
+        name='drop_conv2'
+        p=0.2,
     )
 
     l_conv2 = Conv1DLayer(
@@ -62,7 +63,8 @@ def build_model(batch_size,
 
     l_dropout_conv3 = layers.DropoutLayer(
         l_pool2,
-        p=0.2,
+        name='drop_conv3'
+        p=0.3,
     )
 
     l_conv3 = Conv1DLayer(
@@ -77,7 +79,8 @@ def build_model(batch_size,
 
     l_dropout_conv4 = layers.DropoutLayer(
         l_conv3,
-        p=0.3,
+        name='drop_conv4'
+        p=0.4,
     )
 
     l_conv4 = Conv1DLayer(
@@ -99,11 +102,13 @@ def build_model(batch_size,
 
     l_dropout_dense1 = layers.DropoutLayer(
         l_pool4,
+        name='drop_dense1'
         p=0.5,
     )
 
     l_dense1 = layers.DenseLayer(
         l_dropout_dense1,
+        name='dense1'
         num_units=128,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
@@ -111,11 +116,13 @@ def build_model(batch_size,
 
     l_dropout_dense2 = layers.DropoutLayer(
         l_dense1,
+        name='drop_dense2'
         p=0.5,
     )
 
     l_dense2 = layers.DenseLayer(
         l_dropout_dense2,
+        name='dense2',
         num_units=128,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
@@ -123,6 +130,7 @@ def build_model(batch_size,
 
     l_out = layers.DenseLayer(
         l_dense2,
+        name='output'
         num_units=output_dim,
         nonlinearity=nonlinearities.sigmoid,
         W=init.Orthogonal(),
