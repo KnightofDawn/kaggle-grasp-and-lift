@@ -45,10 +45,10 @@ def load_subject_test(subj_id):
     return data_list, ids_list
 
 
-def preprocess(subj_id, train_data, test_data, compute_csp=True,
-               nfilters=4, butter_smooth=True, boxcar_smooth=True):
-    train_data = [1e-6 * data for data in train_data]
-    test_data = [1e-6 * data for data in test_data]
+def preprocess(subj_id, train_data, test_data, compute_csp=True, nfilters=4,
+               butter_smooth=True, boxcar_smooth=True):
+    #train_data = [1e-6 * data for data in train_data]
+    #test_data = [1e-6 * data for data in test_data]
 
     if butter_smooth:
         b, a = butter(5, np.array([7, 30]) / 250., btype='bandpass')
@@ -71,10 +71,15 @@ def preprocess(subj_id, train_data, test_data, compute_csp=True,
     test_data = [data.astype(np.float32) for data in test_data]
 
     print('normalizing...')
+    # subtract the mean from all time series
     train_mean = np.mean(np.hstack(train_data), axis=1).reshape(-1, 1)
     train_data = [data - train_mean for data in train_data]
-    train_std = np.std(np.hstack(train_data), axis=1).reshape(-1, 1)
 
+    # divide all time series by the standard deviation
+    train_std = np.std(np.hstack(train_data), axis=1).reshape(-1, 1)
+    train_data = [data / train_std for data in train_data]
+
+    # apply the same transform to valid/test
     test_data = [data - train_mean for data in test_data]
     test_data = [data / train_std for data in test_data]
 

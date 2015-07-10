@@ -41,16 +41,14 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     #    utils.preprocess(subj_id, train_data, valid_data, compute_csp=True)
     train_data, valid_data = \
         utils.preprocess(subj_id, train_data, valid_data,
-                         compute_csp=True,
-                         butter_smooth=True,
-                         boxcar_smooth=True)
+                         compute_csp=False, nfilters=2,
+                         butter_smooth=False,
+                         boxcar_smooth=False)
 
-    #batch_size = 512
-    #batch_size = 128
     batch_size = 16
     # remember to change the number of channels when there is csp!!!
-    num_channels = 4
-    #num_channels = 32
+    #num_channels = 2
+    num_channels = 32
     num_actions = 6
     print('building model...')
     l_out = build_model(None, num_channels,
@@ -89,10 +87,9 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     best_weights = None
     best_valid_loss = np.inf
     best_epoch = 0
-    #sampling = np.array(range(0, 500, 32) +  # 16 numbers
-    #                    range(500, 1000, 15) +  # 34 numbers
-    #                    range(1000, 1500, 10) +  # 50 numbers
-    #                    range(1500, 2000, 5))  # 100 numbers
+    #sampling = np.array(range(0, 400, 10) +
+    #                    range(400, 800, 4) +
+    #                    range(800, 1000, 2))
     try:
         for epoch in range(max_epochs):
             print('epoch: %d' % (epoch))
@@ -158,6 +155,9 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                     print('nan loss encountered in minibatch %d' % (i))
                     continue
 
+                if np.isnan(valid_loss):
+                    print('nan loss encountered in minibatch %d' % (i))
+                    continue
                 if (i + 1) % 10000 == 0:
                     print('    processed validation minibatch %d of %d...' %
                           (i + 1, num_batches))
