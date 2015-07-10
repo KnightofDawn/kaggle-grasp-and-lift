@@ -12,14 +12,16 @@ import batching
 import iter_funcs
 import utils
 
-from convnet import build_model
+#from convnet import build_model
 #from convnet_small import build_model
 #from convnet_deep import build_model
-#from convnet_deep_drop import build_model
+from convnet_deep_drop import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs):
-    weights_file = 'data/nets/subj%d_weights_nopreproc.pickle' % (subj_id)
+    #init_file = 'data/nets/subj%d_weights_pretrain.pickle' % (subj_id)
+    init_file = None
+    weights_file = 'data/nets/subj%d_weights_xdawn.pickle' % (subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
 
@@ -39,15 +41,16 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     #    utils.preprocess(subj_id, train_data, valid_data, compute_csp=True)
     train_data, valid_data = \
         utils.preprocess(subj_id, train_data, valid_data,
-                         compute_csp=False,
-                         butter_smooth=False,
-                         boxcar_smooth=False)
+                         compute_csp=True,
+                         butter_smooth=True,
+                         boxcar_smooth=True)
 
-    batch_size = 128
-    #batch_size = 16
+    #batch_size = 512
+    #batch_size = 128
+    batch_size = 16
     # remember to change the number of channels when there is csp!!!
-    #num_channels = 4
-    num_channels = 32
+    num_channels = 4
+    #num_channels = 32
     num_actions = 6
     print('building model...')
     l_out = build_model(None, num_channels,
@@ -60,7 +63,23 @@ def train_model(subj_id, window_size, subsample, max_epochs):
         print('Layer %s has output shape %r' %
               (layer.name, layer.output_shape))
 
+    if init_file is not None:
+        print('loading model weights from %s' % (init_file))
+        with open(init_file, 'rb') as ifile:
+            src_layers = pickle.load(ifile)
+        dst_layers = layers.get_all_params(l_out)
+        for i, (src_weights, dst_layer) in enumerate(
+                zip(src_layers, dst_layers)):
+            if i < 2:
+                continue
+            else:
+                print('loading pretrained weights for %s' % (dst_layer.name))
+                dst_layer.set_value(src_weights)
+    else:
+        print('all layers will be trained from random initialization')
+
     lr = theano.shared(np.cast['float32'](0.001))
+    #lr = theano.shared(np.cast['float32'](0.0001))
     mntm = 0.9
     patience = 2
     print('compiling theano functions...')
@@ -92,6 +111,9 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 #    continue
                 train_loss, train_output = \
                     train_iter(Xb[:, :, (subsample - 1)::subsample], yb)
+                if np.isnan(train_loss):
+                    print('nan loss encountered in minibatch %d' % (i))
+                    continue
                 #train_iter(Xb[:, :, sampling], yb)
                 if (i + 1) % 10000 == 0:
                     print('    processed training minibatch %d of %d...' %
@@ -132,6 +154,9 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 #    augmented_valid_outputs)
                 valid_loss, valid_output = \
                     valid_iter(Xb[:, :, (subsample - 1)::subsample], yb)
+                if np.isnan(valid_loss):
+                    print('nan loss encountered in minibatch %d' % (i))
+                    continue
 
                 if (i + 1) % 10000 == 0:
                     print('    processed validation minibatch %d of %d...' %
@@ -191,8 +216,8 @@ def main():
     subjects = range(1, 2)
     #subjects = range(1, 6)
     #subjects = range(6, 13)
-    window_size = 1000
-    #window_size = 2000
+    #window_size = 1000
+    window_size = 2000
     subsample = 10
     #max_epochs = 2
     max_epochs = 5
