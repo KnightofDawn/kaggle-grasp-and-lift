@@ -10,14 +10,18 @@ import batching
 import iter_funcs
 import utils
 
-from convnet import build_model
+#from convnet import build_model
+#from convnet_small import build_model
+#from convnet_deep import build_model
+from convnet_deep_drop import build_model
 
 
 def generate_submission(subj_id, window_size, subsample):
     weights_dir = 'data/nets'
 
     batch_size = 16
-    num_channels = 4
+    #num_channels = 4
+    num_channels = 32
     num_actions = 6
     print('building model...')
     l_out = build_model(None, num_channels,
@@ -31,9 +35,9 @@ def generate_submission(subj_id, window_size, subsample):
 
     print('predicting for subj_id %d...' % (subj_id))
     preds_file = join('data', 'predictions',
-                      'subj%d_preds.csv' % subj_id)
+                      'subj%d_preds_deep_nocsp.csv' % subj_id)
     weights_file = join(weights_dir,
-                        'subj%d_weights.pickle' % subj_id)
+                        'subj%d_weights_deep_nocsp.pickle' % subj_id)
 
     print('loading model weights from %s' % (weights_file))
     with open(weights_file, 'rb') as ifile:
@@ -61,7 +65,10 @@ def generate_submission(subj_id, window_size, subsample):
 
     print('preprocessing...')
     train_data, test_data = \
-        utils.preprocess(subj_id, train_data, test_data)
+        utils.preprocess(subj_id, train_data, test_data,
+                         compute_csp=True, nfilters=num_channels,
+                         butter_smooth=True,
+                         boxcar_smooth=True)
 
     for data in test_data:
         print('data.shape = %r' % (data.shape,))
@@ -95,7 +102,7 @@ def generate_submission(subj_id, window_size, subsample):
 
 def main():
     subjects = range(1, 13)
-    window_size = 1000
+    window_size = 2000
     subsample = 10
 
     for subj_id in subjects:
