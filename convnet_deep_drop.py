@@ -40,7 +40,7 @@ def build_model(batch_size,
 
     l_dropout_conv2 = layers.DropoutLayer(
         l_pool1,
-        name='drop_conv2'
+        name='drop_conv2',
         p=0.2,
     )
 
@@ -63,7 +63,7 @@ def build_model(batch_size,
 
     l_dropout_conv3 = layers.DropoutLayer(
         l_pool2,
-        name='drop_conv3'
+        name='drop_conv3',
         p=0.3,
     )
 
@@ -79,7 +79,7 @@ def build_model(batch_size,
 
     l_dropout_conv4 = layers.DropoutLayer(
         l_conv3,
-        name='drop_conv4'
+        name='drop_conv4',
         p=0.4,
     )
 
@@ -102,13 +102,13 @@ def build_model(batch_size,
 
     l_dropout_dense1 = layers.DropoutLayer(
         l_pool4,
-        name='drop_dense1'
+        name='drop_dense1',
         p=0.5,
     )
 
     l_dense1 = layers.DenseLayer(
         l_dropout_dense1,
-        name='dense1'
+        name='dense1',
         num_units=128,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
@@ -116,7 +116,7 @@ def build_model(batch_size,
 
     l_dropout_dense2 = layers.DropoutLayer(
         l_dense1,
-        name='drop_dense2'
+        name='drop_dense2',
         p=0.5,
     )
 
@@ -130,7 +130,7 @@ def build_model(batch_size,
 
     l_out = layers.DenseLayer(
         l_dense2,
-        name='output'
+        name='output',
         num_units=output_dim,
         nonlinearity=nonlinearities.sigmoid,
         W=init.Orthogonal(),
