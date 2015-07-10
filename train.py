@@ -21,7 +21,7 @@ from convnet_deep_drop import build_model
 def train_model(subj_id, window_size, subsample, max_epochs):
     #init_file = 'data/nets/subj%d_weights_pretrain.pickle' % (subj_id)
     init_file = None
-    weights_file = 'data/nets/subj%d_weights_xdawn.pickle' % (subj_id)
+    weights_file = 'data/nets/subj%d_weights_deep_nocsp.pickle' % (subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
 
@@ -37,19 +37,18 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     valid_slices = batching.get_permuted_windows(valid_data, window_size)
     print('there are %d windows for training' % (len(train_slices)))
     print('there are %d windows for validation' % (len(valid_slices)))
-    #train_data, valid_data = \
-    #    utils.preprocess(subj_id, train_data, valid_data, compute_csp=True)
-    train_data, valid_data = \
-        utils.preprocess(subj_id, train_data, valid_data,
-                         compute_csp=False, nfilters=2,
-                         butter_smooth=False,
-                         boxcar_smooth=False)
 
     batch_size = 16
     # remember to change the number of channels when there is csp!!!
-    #num_channels = 2
+    #num_channels = 4
     num_channels = 32
     num_actions = 6
+    train_data, valid_data = \
+        utils.preprocess(subj_id, train_data, valid_data,
+                         compute_csp=False, nfilters=num_channels,
+                         butter_smooth=False,
+                         boxcar_smooth=False)
+
     print('building model...')
     l_out = build_model(None, num_channels,
                         window_size / subsample, num_actions)
@@ -213,24 +212,24 @@ def train_model(subj_id, window_size, subsample, max_epochs):
 
 
 def main():
-    subjects = range(1, 2)
+    #subjects = range(1, 2)
     #subjects = range(1, 6)
-    #subjects = range(6, 13)
+    subjects = range(6, 13)
     #window_size = 1000
     window_size = 2000
     subsample = 10
-    #max_epochs = 2
-    max_epochs = 5
+    max_epochs = 2
+    #max_epochs = 5
     model_train_losses, model_valid_losses = [], []
     model_train_rocs, model_valid_rocs = [], []
     for subj_id in subjects:
         model_train_loss, model_valid_loss, model_train_roc, model_valid_roc =\
             train_model(subj_id, window_size, subsample, max_epochs)
         print('\n%s subject %d %s' % ('*' * 10, subj_id, '*' * 10))
-        print('model training loss = %.5f' % (model_train_loss))
-        print('model valid loss    = %.5f' % (model_valid_loss))
-        print('model training roc  = %.5f' % (model_train_roc))
-        print('model valid roc     = %.5f' % (model_valid_roc))
+        print(' model training loss = %.5f' % (model_train_loss))
+        print(' model valid loss    = %.5f' % (model_valid_loss))
+        print(' model training roc  = %.5f' % (model_train_roc))
+        print(' model valid roc     = %.5f' % (model_valid_roc))
         print('%s subject %d %s\n' % ('*' * 10, subj_id, '*' * 10))
         model_train_losses.append(model_train_loss)
         model_valid_losses.append(model_valid_loss)
