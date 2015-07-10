@@ -66,9 +66,9 @@ def generate_submission(subj_id, window_size, subsample):
     print('preprocessing...')
     train_data, test_data = \
         utils.preprocess(subj_id, train_data, test_data,
-                         compute_csp=True, nfilters=num_channels,
-                         butter_smooth=True,
-                         boxcar_smooth=True)
+                         compute_csp=False, nfilters=num_channels,
+                         butter_smooth=False,
+                         boxcar_smooth=False)
 
     for data in test_data:
         print('data.shape = %r' % (data.shape,))
