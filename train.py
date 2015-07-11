@@ -21,7 +21,7 @@ from convnet_deep_drop import build_model
 def train_model(subj_id, window_size, subsample, max_epochs):
     #init_file = 'data/nets/subj%d_weights_pretrain.pickle' % (subj_id)
     init_file = None
-    weights_file = 'data/nets/subj%d_weights_deep_testing.pickle' % (subj_id)
+    weights_file = 'data/nets/subj%d_weights_deep_nocsp_wn.pickle' % (subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
 

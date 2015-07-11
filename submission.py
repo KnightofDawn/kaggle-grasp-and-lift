@@ -19,7 +19,8 @@ from convnet_deep_drop import build_model
 def generate_submission(subj_id, window_size, subsample):
     weights_dir = 'data/nets'
 
-    batch_size = 16
+    batch_size = 64
+    #batch_size = 16
     #num_channels = 4
     num_channels = 32
     num_actions = 6
@@ -35,9 +36,9 @@ def generate_submission(subj_id, window_size, subsample):
 
     print('predicting for subj_id %d...' % (subj_id))
     preds_file = join('data', 'predictions',
-                      'subj%d_preds_deep_nocsp.csv' % subj_id)
+                      'subj%d_preds_deep_nocsp_wn.csv' % subj_id)
     weights_file = join(weights_dir,
-                        'subj%d_weights_deep_nocsp.pickle' % subj_id)
+                        'subj%d_weights_deep_nocsp_wn.pickle' % subj_id)
 
     print('loading model weights from %s' % (weights_file))
     with open(weights_file, 'rb') as ifile:
@@ -68,7 +69,8 @@ def generate_submission(subj_id, window_size, subsample):
         utils.preprocess(subj_id, train_data, test_data,
                          compute_csp=False, nfilters=num_channels,
                          butter_smooth=False,
-                         boxcar_smooth=False)
+                         boxcar_smooth=False,
+                         window_norm=True)
 
     for data in test_data:
         print('data.shape = %r' % (data.shape,))
@@ -101,7 +103,7 @@ def generate_submission(subj_id, window_size, subsample):
 
 
 def main():
-    subjects = range(1, 13)
+    subjects = range(6, 13)
     window_size = 2000
     subsample = 10
 
