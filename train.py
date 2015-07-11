@@ -21,7 +21,7 @@ from convnet_deep_drop import build_model
 def train_model(subj_id, window_size, subsample, max_epochs):
     #init_file = 'data/nets/subj%d_weights_pretrain.pickle' % (subj_id)
     init_file = None
-    weights_file = 'data/nets/subj%d_weights_deep_nocsp.pickle' % (subj_id)
+    weights_file = 'data/nets/subj%d_weights_deep_testing.pickle' % (subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
 
@@ -38,7 +38,8 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     print('there are %d windows for training' % (len(train_slices)))
     print('there are %d windows for validation' % (len(valid_slices)))
 
-    batch_size = 16
+    #batch_size = 16
+    batch_size = 64
     # remember to change the number of channels when there is csp!!!
     #num_channels = 4
     num_channels = 32
@@ -78,7 +79,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     lr = theano.shared(np.cast['float32'](0.001))
     #lr = theano.shared(np.cast['float32'](0.0001))
     mntm = 0.9
-    patience = 2
+    patience = 0
     print('compiling theano functions...')
     train_iter = iter_funcs.create_iter_funcs_train(lr, mntm, l_out)
     valid_iter = iter_funcs.create_iter_funcs_valid(l_out)
@@ -101,7 +102,8 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 batching.batch_iterator(batch_size,
                                         train_slices,
                                         train_data,
-                                        train_events)):
+                                        train_events,
+                                        window_norm=True)):
                 # hack for faster debugging
                 #if i < 70000:
                 #    continue
@@ -138,7 +140,8 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 batching.batch_iterator(batch_size,
                                         valid_slices,
                                         valid_data,
-                                        valid_events)):
+                                        valid_events,
+                                        window_norm=True)):
                 #augmented_valid_losses, augmented_valid_outputs = [], []
                 #for offset in range(0, subsample):
                 #    valid_loss, valid_output = \
@@ -196,6 +199,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 best_weights = layers.get_all_param_values(l_out)
 
             if epoch > best_epoch + patience:
+                break
                 best_epoch = epoch
                 new_lr = 0.5 * lr.get_value()
                 lr.set_value(np.cast['float32'](new_lr))
@@ -212,13 +216,13 @@ def train_model(subj_id, window_size, subsample, max_epochs):
 
 
 def main():
-    #subjects = range(1, 2)
+    subjects = range(1, 2)
     #subjects = range(1, 6)
-    subjects = range(6, 13)
-    #window_size = 1000
+    #subjects = range(6, 13)
+    #subjects = range(6, 7)
     window_size = 2000
-    subsample = 10
-    max_epochs = 2
+    subsample = 10 
+    max_epochs = 10 
     #max_epochs = 5
     model_train_losses, model_valid_losses = [], []
     model_train_rocs, model_valid_rocs = [], []
