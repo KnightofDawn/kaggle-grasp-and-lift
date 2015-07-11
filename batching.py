@@ -34,11 +34,12 @@ def get_permuted_windows(series_list, window_size, rand=True):
 
 
 def normalize_window(X):
-    X_mean = np.mean(X, axis=1).reshape(-1, 1)
-    X = X - X_mean
-    X_std = np.std(X, axis=1).reshape(-1, 1)
-    X = X / X_std
+    #X_mean = np.mean(X, axis=1).reshape(-1, 1)
+    #X = X - X_mean
+    #X_std = np.std(X, axis=1).reshape(-1, 1)
+    #X = X / X_std
 
+    # normalize each channel's signal to be between 0 and 1
     X_min = np.min(X, axis=1).reshape(-1, 1)
     X_max = np.max(X, axis=1).reshape(-1, 1)
 
