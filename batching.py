@@ -43,7 +43,7 @@ def normalize_window(X):
 # splits the list of window indices and slices into batches
 # and grabs the fixed-length windows from the corresponding
 # slice from that time-series
-def batch_iterator(bs, W, X, y=None, normalize_window=False):
+def batch_iterator(bs, W, X, y=None, window_norm=False):
     if not W:
         raise StopIteration
     window_size = W[0][1].stop - W[0][1].start
@@ -56,7 +56,7 @@ def batch_iterator(bs, W, X, y=None, normalize_window=False):
         # index: which time series to take the window from
         # s:     the slice to take from that time series
         for index, s in Wb:
-            if normalize_window:
+            if window_norm:
                 X_window = normalize_window(X[index][:, s])
             else:
                 X_window = X[index][:, s]
