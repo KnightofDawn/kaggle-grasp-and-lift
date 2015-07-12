@@ -221,8 +221,8 @@ def main():
     #subjects = range(6, 13)
     #subjects = range(6, 7)
     window_size = 2000
-    subsample = 10 
-    max_epochs = 10 
+    subsample = 10
+    max_epochs = 10
     #max_epochs = 5
     model_train_losses, model_valid_losses = [], []
     model_train_rocs, model_valid_rocs = [], []

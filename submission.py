@@ -69,8 +69,7 @@ def generate_submission(subj_id, window_size, subsample):
         utils.preprocess(subj_id, train_data, test_data,
                          compute_csp=False, nfilters=num_channels,
                          butter_smooth=False,
-                         boxcar_smooth=False,
-                         window_norm=True)
+                         boxcar_smooth=False)
 
     for data in test_data:
         print('data.shape = %r' % (data.shape,))
@@ -80,7 +79,8 @@ def generate_submission(subj_id, window_size, subsample):
     for i, (Xb, _) in enumerate(batching.batch_iterator(batch_size,
                                 test_slices,
                                 test_data,
-                                y=None)):
+                                y=None,
+                                window_norm=True)):
         test_output = test_iter(Xb[:, :, ::subsample])
         for output in test_output:
             test_outputs.append(output)
@@ -103,7 +103,7 @@ def generate_submission(subj_id, window_size, subsample):
 
 
 def main():
-    subjects = range(6, 13)
+    subjects = range(1, 6)
     window_size = 2000
     subsample = 10
 
