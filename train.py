@@ -19,9 +19,13 @@ from convnet_deep_drop import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs):
-    #init_file = 'data/nets/subj%d_weights_pretrain.pickle' % (subj_id)
-    init_file = None
-    weights_file = 'data/nets/subj%d_weights_deep_nocsp_wn.pickle' % (subj_id)
+    # the file from which to load pre-trained weights
+    init_file = 'data/nets/subj%d_weights_deep_nocsp_wn.pickle' % (
+        subj_id)
+    #init_file = None
+    # the file to which the learned weights will be written
+    weights_file = 'data/nets/subj%d_weights_deep_nocsp_wn_extra.pickle' % (
+        subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
 
@@ -68,11 +72,8 @@ def train_model(subj_id, window_size, subsample, max_epochs):
         dst_layers = layers.get_all_params(l_out)
         for i, (src_weights, dst_layer) in enumerate(
                 zip(src_layers, dst_layers)):
-            if i < 2:
-                continue
-            else:
-                print('loading pretrained weights for %s' % (dst_layer.name))
-                dst_layer.set_value(src_weights)
+            print('loading pretrained weights for %s' % (dst_layer.name))
+            dst_layer.set_value(src_weights)
     else:
         print('all layers will be trained from random initialization')
 
@@ -216,8 +217,11 @@ def train_model(subj_id, window_size, subsample, max_epochs):
 
 
 def main():
-    subjects = range(1, 2)
+    #subjects = range(1, 2)
     #subjects = range(1, 6)
+    # the models that were underfitting
+    subjects = [1, 2, 4, 5]
+    #subjects = [7, 8, 9, 11, 12]
     #subjects = range(6, 13)
     #subjects = range(6, 7)
     window_size = 2000
