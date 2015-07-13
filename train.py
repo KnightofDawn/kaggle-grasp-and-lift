@@ -20,11 +20,11 @@ from convnet_deep_drop import build_model
 
 def train_model(subj_id, window_size, subsample, max_epochs):
     # the file from which to load pre-trained weights
-    init_file = 'data/nets/subj%d_weights_deep_nocsp_wn.pickle' % (
-        subj_id)
-    #init_file = None
+    #init_file = 'data/nets/subj%d_weights_deep_nocsp_wn.pickle' % (
+    #    subj_id)
+    init_file = None
     # the file to which the learned weights will be written
-    weights_file = 'data/nets/subj%d_weights_deep_nocsp_wn_extra.pickle' % (
+    weights_file = 'data/nets/subj%d_weights_deep_nocsp_wn_extra_testing.pickle' % (
         subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
@@ -55,8 +55,10 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                          boxcar_smooth=False)
 
     print('building model...')
+    #l_out = build_model(None, num_channels,
+    #                    window_size / subsample, num_actions)
     l_out = build_model(None, num_channels,
-                        window_size / subsample, num_actions)
+                        window_size, num_actions)
 
     all_layers = layers.get_all_layers(l_out)
     print('this network has %d learnable parameters' %
@@ -108,8 +110,10 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 # hack for faster debugging
                 #if i < 70000:
                 #    continue
+                #train_loss, train_output = \
+                #    train_iter(Xb[:, :, (subsample - 1)::subsample], yb)
                 train_loss, train_output = \
-                    train_iter(Xb[:, :, (subsample - 1)::subsample], yb)
+                    train_iter(Xb, yb)
                 if np.isnan(train_loss):
                     print('nan loss encountered in minibatch %d' % (i))
                     continue
@@ -152,8 +156,10 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 #valid_loss = np.mean(augmented_valid_losses)
                 #valid_output = batching.compute_geometric_mean(
                 #    augmented_valid_outputs)
+                #valid_loss, valid_output = \
+                #    valid_iter(Xb[:, :, (subsample - 1)::subsample], yb)
                 valid_loss, valid_output = \
-                    valid_iter(Xb[:, :, (subsample - 1)::subsample], yb)
+                    valid_iter(Xb, yb)
                 if np.isnan(valid_loss):
                     print('nan loss encountered in minibatch %d' % (i))
                     continue
@@ -220,7 +226,8 @@ def main():
     #subjects = range(1, 2)
     #subjects = range(1, 6)
     # the models that were underfitting
-    subjects = [1, 2, 4, 5]
+    #subjects = [1, 2, 4, 5]
+    subjects = [1]
     #subjects = [7, 8, 9, 11, 12]
     #subjects = range(6, 13)
     #subjects = range(6, 7)
