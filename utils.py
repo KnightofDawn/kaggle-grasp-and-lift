@@ -3,7 +3,11 @@
 import numpy as np
 import pandas as pd
 
-from time import time
+from time import time, strftime
+
+
+def get_current_time():
+    return strftime('%Y-%m-%d_%H:%M:%S')
 
 
 def load_subject_train(subj_id):

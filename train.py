@@ -22,7 +22,7 @@ from convnet_regions import build_model
 #from convnet_very_deep_drop import build_model
 
 
-def train_model(subj_id, window_size, subsample, max_epochs):
+def train_model(subj_id, window_size, subsample, max_epochs, patience):
     root_dir = join('data', 'nets')
     # the file from which to load pre-trained weights
     #init_file = join(root_dir,
@@ -81,7 +81,6 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     lr = theano.shared(np.cast['float32'](0.001))
     #lr = theano.shared(np.cast['float32'](0.0001))
     mntm = 0.9
-    patience = 0
     print('compiling theano functions...')
     train_iter = iter_funcs.create_iter_funcs_train(lr, mntm, l_out)
     valid_iter = iter_funcs.create_iter_funcs_valid(l_out)
@@ -89,6 +88,8 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     best_weights = None
     best_valid_loss = np.inf
     best_epoch = 0
+    print('starting training for subject %d at %s' % (
+        subj_id, utils.get_current_time()))
     try:
         for epoch in range(max_epochs):
             print('epoch: %d' % (epoch))
@@ -208,6 +209,8 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     with open(weights_file, 'wb') as ofile:
         print('saving best weights to %s' % (weights_file))
         pickle.dump(best_weights, ofile, protocol=pickle.HIGHEST_PROTOCOL)
+    print('finished training for subject %d at %s' % (
+        subj_id, utils.get_current_time()))
 
     return model_train_loss, best_valid_loss, model_train_roc, model_valid_roc
 
@@ -219,19 +222,21 @@ def main():
     #subjects = [1, 2, 4, 5]
     #subjects = [1]
     #subjects = [7, 8, 9, 11, 12]
-    subjects = [10]
+    #subjects = [10]
     #subjects = range(6, 13)
+    subjects = [5, 6, 7, 8, 9, 11, 12, 10]
     #subjects = range(6, 7)
     #window_size = 2000
     window_size = 1600
     subsample = 10
-    max_epochs = 10
+    max_epochs = 15
+    patience = 1
     #max_epochs = 5
     model_train_losses, model_valid_losses = [], []
     model_train_rocs, model_valid_rocs = [], []
     for subj_id in subjects:
         model_train_loss, model_valid_loss, model_train_roc, model_valid_roc =\
-            train_model(subj_id, window_size, subsample, max_epochs)
+            train_model(subj_id, window_size, subsample, max_epochs, patience)
         print('\n%s subject %d %s' % ('*' * 10, subj_id, '*' * 10))
         print(' model training loss = %.5f' % (model_train_loss))
         print(' model valid loss    = %.5f' % (model_valid_loss))
