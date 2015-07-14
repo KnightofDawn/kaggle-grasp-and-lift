@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+import numpy as np
 from lasagne import layers
 
 
@@ -18,21 +21,37 @@ class SubsampleLayer(layers.Layer):
         if self.window.stop is None and self.window.start is None:
             output_shape[2] = input_shape[2] / self.window.step
         elif self.window.stop is None:
-            output_shape[2] = (input_shape[2] - self.window.start) / self.window.step
+            output_shape[2] = (input_shape[2] -
+                               self.window.start) / self.window.step
         elif self.window.start is None:
             output_shape[2] = self.window.stop / self.window.step
         else:
-            output_shape[2] = (self.window.stop - self.window.start) / self.window.step
+            output_shape[2] = (self.window.stop -
+                               self.window.start) / self.window.step
         return tuple(output_shape)
 
     def get_output_for(self, input, **kwargs):
-        step = self.window.step
-        # always take the signal value at the last time-step
-        start = (input.shape[0] - 1) % step
-        # account for the possible offset
-        if self.window.start is not None:
-            start += self.window.start
+        start = self.window.start
         stop = self.window.stop
+        step = self.window.step
+        return input[:, :, start:stop][:, :, ::-1][:, :, ::step][:, :, ::-1]
 
-        # slice across the time-axis
-        return input[:, :, slice(start, stop, step)]
+
+def run_tests():
+    l_in = layers.InputLayer(shape=(64, 32, 2000))
+    l_sample = SubsampleLayer(l_in, window=(None, 1000, 10))
+
+    X = np.random.normal(0, 1, (64, 32, 2000))
+    expected_output_shape = (64, 32, 100)
+    actual_output_shape = l_sample.get_output_shape_for(X.shape)
+    assert expected_output_shape == actual_output_shape, '%r != %r' % (
+        expected_output_shape, actual_output_shape)
+    expected_output = X[:, :, None:1000][:, :, ::-1][:, :, ::10][:, :, ::-1]
+    actual_output = l_sample.get_output_for(X)
+    assert expected_output_shape == actual_output.shape, '%r != %r' % (
+        expected_output_shape, actual_output.shape)
+    print expected_output.shape, actual_output.shape
+    assert (expected_output == actual_output).all(), 'bad subsampling'
+
+if __name__ == '__main__':
+    run_tests()
