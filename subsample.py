@@ -46,12 +46,51 @@ def run_tests():
     actual_output_shape = l_sample.get_output_shape_for(X.shape)
     assert expected_output_shape == actual_output_shape, '%r != %r' % (
         expected_output_shape, actual_output_shape)
+
+    # test None:1000
     expected_output = X[:, :, None:1000][:, :, ::-1][:, :, ::10][:, :, ::-1]
     actual_output = l_sample.get_output_for(X)
-    assert expected_output_shape == actual_output.shape, '%r != %r' % (
+    assert expected_output.shape == actual_output.shape, '%r != %r' % (
         expected_output_shape, actual_output.shape)
-    print expected_output.shape, actual_output.shape
     assert (expected_output == actual_output).all(), 'bad subsampling'
+
+    # test 1000:None
+    l_sample = SubsampleLayer(l_in, window=(1000, None, 10))
+    expected_output = X[:, :, 1000:None][:, :, ::-1][:, :, ::10][:, :, ::-1]
+    actual_output = l_sample.get_output_for(X)
+    assert expected_output.shape == actual_output.shape, '%r != %r' % (
+        expected_output_shape, actual_output.shape)
+    assert (expected_output == actual_output).all(), 'bad subsampling'
+
+    # test None:None
+    l_sample = SubsampleLayer(l_in, window=(None, None, 10))
+    expected_output = X[:, :, None:None][:, :, ::-1][:, :, ::10][:, :, ::-1]
+    actual_output = l_sample.get_output_for(X)
+    assert expected_output.shape == actual_output.shape, '%r != %r' % (
+        expected_output_shape, actual_output.shape)
+    assert (expected_output == actual_output).all(), 'bad subsampling'
+
+    X = np.arange(2 * 4 * 10).reshape(2, 4, 10)
+    l_in = layers.InputLayer(shape=(2, 4, 10))
+    l_sample = SubsampleLayer(l_in, window=(None, 5, 3))
+    expected_output = X[:, :, (1, 4)]
+    actual_output = l_sample.get_output_for(X)
+    assert (expected_output == actual_output).all(), 'bad subsampling'
+
+    X = np.arange(2 * 4 * 10).reshape(2, 4, 10)
+    l_in = layers.InputLayer(shape=(2, 4, 10))
+    l_sample = SubsampleLayer(l_in, window=(1, None, 4))
+    expected_output = X[:, :, (1, 5, 9)]
+    actual_output = l_sample.get_output_for(X)
+    assert (expected_output == actual_output).all(), 'bad subsampling'
+
+    X = np.arange(2 * 4 * 10).reshape(2, 4, 10)
+    l_in = layers.InputLayer(shape=(2, 4, 10))
+    l_sample = SubsampleLayer(l_in, window=(1, None, 4))
+    expected_output = X[:, :, (1, 5, 9)]
+    actual_output = l_sample.get_output_for(X)
+    assert (expected_output == actual_output).all(), 'bad subsampling'
+
 
 if __name__ == '__main__':
     run_tests()
