@@ -46,6 +46,8 @@ def load_subject_test(subj_id):
     return data_list, ids_list
 
 
+# compute a normalizing transformation over all the training data,
+# and apply this same transform to unseen data
 def preprocess(subj_id, train_data, test_data):
     train_data = [data.astype(np.float32) for data in train_data]
     test_data = [data.astype(np.float32) for data in test_data]
@@ -89,7 +91,7 @@ def split_train_test_data(data_list, events_list, val_size=2, rand=False):
     return train_data, train_events, valid_data, valid_events
 
 
-# time the loading of the h5py files and print the shapes of the time series
+# time the loading of the files and print the shapes of the time series
 # arrays
 def verify_data():
     for subject in range(1, 13):

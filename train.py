@@ -44,8 +44,9 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
     print('using %d time series for validation' % (len(valid_data)))
 
     print('creating fixed-size time-windows of size %d' % (window_size))
-    train_slices = batching.get_permuted_windows(train_data, window_size)
-    valid_slices = batching.get_permuted_windows(valid_data, window_size)
+    # the training windows should be in random order
+    train_slices = batching.get_permuted_windows(train_data, window_size, rand=True)
+    valid_slices = batching.get_permuted_windows(valid_data, window_size, rand=True)
     print('there are %d windows for training' % (len(train_slices)))
     print('there are %d windows for validation' % (len(valid_slices)))
 

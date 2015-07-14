@@ -59,6 +59,7 @@ def generate_submission(subj_id, window_size, subsample):
     test_iter = iter_funcs.create_iter_funcs_test(l_out)
 
     print('getting time windows for test data')
+    # the test windows should be in fixed order
     test_slices = batching.get_permuted_windows(test_data, window_size,
                                                 rand=False)
     print('there are %d windows for prediction' % (len(test_slices)))
