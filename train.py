@@ -5,6 +5,7 @@ import numpy as np
 import theano
 
 from lasagne import layers
+from os.path import join
 from sklearn.metrics import roc_auc_score
 from time import time
 
@@ -16,19 +17,22 @@ import utils
 #from convnet_small import build_model
 #from convnet_deep import build_model
 #from convnet_deep_drop import build_model
-#from convnet_scale import build_model
-from convnet_deep_scale import build_model
-#from convnet_regions import build_model
+#from convnet_deep_scale import build_model
+from convnet_regions import build_model
+#from convnet_very_deep_drop import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs):
+    root_dir = join('data', 'nets')
     # the file from which to load pre-trained weights
-    #init_file = 'data/nets/subj%d_weights_deep_nocsp_wn.pickle' % (
-    #    subj_id)
+    #init_file = join(root_dir,
+    #                 'subj%d_weights_deep_nocsp_wn.pickle' % (
+    #                     subj_id))
     init_file = None
     # the file to which the learned weights will be written
-    weights_file = 'data/nets/subj%d_weights_deep_nocsp_wn_extra_scale.pickle' % (
-        subj_id)
+    weights_file = join(root_dir,
+                        'subj%d_weights_deep_nocsp_wn_extra_regions.pickle' % (
+                            subj_id))
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
 
@@ -55,8 +59,6 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                          boxcar_smooth=False)
 
     print('building model...')
-    #l_out = build_model(None, num_channels,
-    #                    window_size / subsample, num_actions)
     l_out = build_model(None, num_channels,
                         window_size, num_actions, subsample)
 
@@ -106,8 +108,6 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 # hack for faster debugging
                 #if i < 70000:
                 #    continue
-                #train_loss, train_output = \
-                #    train_iter(Xb[:, :, (subsample - 1)::subsample], yb)
                 train_loss, train_output = \
                     train_iter(Xb, yb)
                 if np.isnan(train_loss):
@@ -151,8 +151,6 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 #valid_loss = np.mean(augmented_valid_losses)
                 #valid_output = batching.compute_geometric_mean(
                 #    augmented_valid_outputs)
-                #valid_loss, valid_output = \
-                #    valid_iter(Xb[:, :, (subsample - 1)::subsample], yb)
                 valid_loss, valid_output = \
                     valid_iter(Xb, yb)
                 if np.isnan(valid_loss):
@@ -222,13 +220,13 @@ def main():
     #subjects = range(1, 6)
     # the models that were underfitting
     #subjects = [1, 2, 4, 5]
-    #subjects = [1]
+    subjects = [1]
     #subjects = [7, 8, 9, 11, 12]
-    subjects = [10]
+    #subjects = [10]
     #subjects = range(6, 13)
     #subjects = range(6, 7)
-    window_size = 2000
-    #window_size = 1600
+    #window_size = 2000
+    window_size = 1600
     subsample = 10
     max_epochs = 10
     #max_epochs = 5

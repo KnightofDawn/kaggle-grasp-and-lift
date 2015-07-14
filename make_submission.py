@@ -1,17 +1,24 @@
 #!/usr/bin/env python
 
+from os.path import join
+
 
 def make_submission():
     subjects = range(1, 13)
-    submission_file = 'data/submissions/convnet_deep_nocsp_wn.csv'
+    submission_file = 'data/submissions/convnet_deep_nocsp_wn_extra.csv'
+    submission_file = join('data',
+                           'submissions',
+                           'convnet_deep_nocsp_wn_extra.csv')
     header = ['id', 'HandStart', 'FirstDigitTouch', 'BothStartLoadPhase',
               'LiftOff', 'Replace', 'BothReleased']
     print('generating submission file: %s' % (submission_file))
     with open(submission_file, 'w') as ofile:
         ofile.write('%s\n' % ','.join(header))
         for subj_id in subjects:
-            pred_file = 'data/predictions/subj%d_preds_deep_nocsp_wn.csv' % (
-                subj_id)
+            pred_file = join('data',
+                             'predictions',
+                             'subj%d_preds_deep_nocsp_wn_extra.csv' % (
+                                 subj_id))
             print('  reading probabilities from %s' % (pred_file))
             with open(pred_file, 'r') as ifile:
                 for line in ifile:

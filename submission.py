@@ -13,20 +13,19 @@ import utils
 #from convnet import build_model
 #from convnet_small import build_model
 #from convnet_deep import build_model
-from convnet_deep_drop import build_model
+#from convnet_deep_drop import build_model
+from convnet_regions import build_model
 
 
 def generate_submission(subj_id, window_size, subsample):
-    weights_dir = 'data/nets'
+    weights_dir = join('data', 'nets')
 
     batch_size = 64
-    #batch_size = 16
-    #num_channels = 4
     num_channels = 32
     num_actions = 6
     print('building model...')
     l_out = build_model(None, num_channels,
-                        window_size / subsample, num_actions)
+                        window_size, num_actions, subsample)
     all_layers = layers.get_all_layers(l_out)
     print('this network has %d learnable parameters' %
           (layers.count_params(l_out)))
@@ -36,9 +35,9 @@ def generate_submission(subj_id, window_size, subsample):
 
     print('predicting for subj_id %d...' % (subj_id))
     preds_file = join('data', 'predictions',
-                      'subj%d_preds_deep_nocsp_wn.csv' % subj_id)
+                      'subj%d_preds_deep_nocsp_wn_extra.csv' % subj_id)
     weights_file = join(weights_dir,
-                        'subj%d_weights_deep_nocsp_wn.pickle' % subj_id)
+                        'subj%d_weights_deep_nocsp_wn_extra.pickle' % subj_id)
 
     print('loading model weights from %s' % (weights_file))
     with open(weights_file, 'rb') as ifile:
@@ -81,7 +80,7 @@ def generate_submission(subj_id, window_size, subsample):
                                 test_data,
                                 y=None,
                                 window_norm=True)):
-        test_output = test_iter(Xb[:, :, ::subsample])
+        test_output = test_iter(Xb)
         for output in test_output:
             test_outputs.append(output)
 
@@ -104,7 +103,7 @@ def generate_submission(subj_id, window_size, subsample):
 
 def main():
     subjects = range(1, 6)
-    window_size = 2000
+    window_size = 1600
     subsample = 10
 
     for subj_id in subjects:
