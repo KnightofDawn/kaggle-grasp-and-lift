@@ -15,7 +15,10 @@ import utils
 #from convnet import build_model
 #from convnet_small import build_model
 #from convnet_deep import build_model
-from convnet_deep_drop import build_model
+#from convnet_deep_drop import build_model
+#from convnet_scale import build_model
+from convnet_deep_scale import build_model
+#from convnet_regions import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs):
@@ -24,7 +27,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     #    subj_id)
     init_file = None
     # the file to which the learned weights will be written
-    weights_file = 'data/nets/subj%d_weights_deep_nocsp_wn_extra_testing.pickle' % (
+    weights_file = 'data/nets/subj%d_weights_deep_nocsp_wn_extra_scale.pickle' % (
         subj_id)
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
@@ -42,10 +45,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     print('there are %d windows for training' % (len(train_slices)))
     print('there are %d windows for validation' % (len(valid_slices)))
 
-    #batch_size = 16
     batch_size = 64
-    # remember to change the number of channels when there is csp!!!
-    #num_channels = 4
     num_channels = 32
     num_actions = 6
     train_data, valid_data = \
@@ -58,7 +58,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     #l_out = build_model(None, num_channels,
     #                    window_size / subsample, num_actions)
     l_out = build_model(None, num_channels,
-                        window_size, num_actions)
+                        window_size, num_actions, subsample)
 
     all_layers = layers.get_all_layers(l_out)
     print('this network has %d learnable parameters' %
@@ -90,15 +90,11 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     best_weights = None
     best_valid_loss = np.inf
     best_epoch = 0
-    #sampling = np.array(range(0, 400, 10) +
-    #                    range(400, 800, 4) +
-    #                    range(800, 1000, 2))
     try:
         for epoch in range(max_epochs):
             print('epoch: %d' % (epoch))
             print('  training...')
             train_losses, training_outputs, training_inputs = [], [], []
-            #num_batches = len(train_slices) / batch_size + 1
             num_batches = (len(train_slices) + batch_size - 1) / batch_size
             t_train_start = time()
             for i, (Xb, yb) in enumerate(
@@ -117,7 +113,6 @@ def train_model(subj_id, window_size, subsample, max_epochs):
                 if np.isnan(train_loss):
                     print('nan loss encountered in minibatch %d' % (i))
                     continue
-                #train_iter(Xb[:, :, sampling], yb)
                 if (i + 1) % 10000 == 0:
                     print('    processed training minibatch %d of %d...' %
                           (i + 1, num_batches))
@@ -227,11 +222,13 @@ def main():
     #subjects = range(1, 6)
     # the models that were underfitting
     #subjects = [1, 2, 4, 5]
-    subjects = [1]
+    #subjects = [1]
     #subjects = [7, 8, 9, 11, 12]
+    subjects = [10]
     #subjects = range(6, 13)
     #subjects = range(6, 7)
     window_size = 2000
+    #window_size = 1600
     subsample = 10
     max_epochs = 10
     #max_epochs = 5
