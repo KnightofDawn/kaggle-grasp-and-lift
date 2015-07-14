@@ -31,7 +31,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     init_file = None
     # the file to which the learned weights will be written
     weights_file = join(root_dir,
-                        'subj%d_weights_deep_nocsp_wn_extra_regions.pickle' % (
+                        'subj%d_weights_deep_nocsp_wn_regions.pickle' % (
                             subj_id))
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
@@ -53,10 +53,7 @@ def train_model(subj_id, window_size, subsample, max_epochs):
     num_channels = 32
     num_actions = 6
     train_data, valid_data = \
-        utils.preprocess(subj_id, train_data, valid_data,
-                         compute_csp=False, nfilters=num_channels,
-                         butter_smooth=False,
-                         boxcar_smooth=False)
+        utils.preprocess(subj_id, train_data, valid_data)
 
     print('building model...')
     l_out = build_model(None, num_channels,
@@ -216,13 +213,13 @@ def train_model(subj_id, window_size, subsample, max_epochs):
 
 
 def main():
-    #subjects = range(1, 2)
+    #subjects = range(1, 9)
     #subjects = range(1, 6)
     # the models that were underfitting
     #subjects = [1, 2, 4, 5]
-    subjects = [1]
+    #subjects = [1]
     #subjects = [7, 8, 9, 11, 12]
-    #subjects = [10]
+    subjects = [10]
     #subjects = range(6, 13)
     #subjects = range(6, 7)
     #window_size = 2000

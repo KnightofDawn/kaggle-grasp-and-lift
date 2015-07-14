@@ -3,10 +3,7 @@
 import numpy as np
 import pandas as pd
 
-import csp
-
 from time import time
-from scipy.signal import butter, lfilter
 
 
 def load_subject_train(subj_id):
@@ -45,28 +42,7 @@ def load_subject_test(subj_id):
     return data_list, ids_list
 
 
-def preprocess(subj_id, train_data, test_data, compute_csp=True, nfilters=4,
-               butter_smooth=True, boxcar_smooth=True):
-    #train_data = [1e-6 * data for data in train_data]
-    #test_data = [1e-6 * data for data in test_data]
-
-    if butter_smooth:
-        b, a = butter(5, np.array([7, 30]) / 250., btype='bandpass')
-        train_data = [lfilter(b, a, data) for data in train_data]
-        test_data = [lfilter(b, a, data) for data in test_data]
-
-    if compute_csp:
-        print('computing common spatial patterns...')
-        csp_transform = csp.compute_transform(subj_id, nfilters=nfilters)
-        print('csp transform shape = %r' % (csp_transform.shape,))
-        train_data = csp.apply_transform(train_data, csp_transform)
-        test_data = csp.apply_transform(test_data, csp_transform)
-
-    if boxcar_smooth:
-        print('boxcar smoothing...')
-        train_data = csp.post_csp(train_data, nwin=250)
-        test_data = csp.post_csp(test_data, nwin=250)
-
+def preprocess(subj_id, train_data, test_data):
     train_data = [data.astype(np.float32) for data in train_data]
     test_data = [data.astype(np.float32) for data in test_data]
 
