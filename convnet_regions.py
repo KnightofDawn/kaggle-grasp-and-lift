@@ -17,7 +17,8 @@ SubsampleLayer = subsample.SubsampleLayer
 def build_model(batch_size,
                 num_channels,
                 input_length,
-                output_dim,):
+                output_dim,
+                subsample,):
     l_in = layers.InputLayer(
         shape=(batch_size, num_channels, input_length),
         name='input',

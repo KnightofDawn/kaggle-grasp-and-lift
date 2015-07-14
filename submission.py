@@ -104,6 +104,9 @@ def generate_submission(subj_id, window_size, subsample):
 def main():
     subjects = range(1, 6)
     window_size = 1600
+    #subjects = range(6, 13)
+    #window_size = 2000
+
     subsample = 10
 
     for subj_id in subjects:
