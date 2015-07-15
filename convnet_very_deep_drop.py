@@ -17,7 +17,8 @@ SubsampleLayer = subsample.SubsampleLayer
 def build_model(batch_size,
                 num_channels,
                 input_length,
-                output_dim,):
+                output_dim,
+                subsample,):
     l_in = layers.InputLayer(
         shape=(batch_size, num_channels, input_length),
         name='input',
@@ -25,7 +26,7 @@ def build_model(batch_size,
 
     l_sampling = SubsampleLayer(
         l_in,
-        window=(None, None, 5),
+        window=(None, None, subsample),
         name='l_sampling',
     )
 
@@ -172,7 +173,7 @@ def build_model(batch_size,
     l_dense1 = layers.DenseLayer(
         l_dropout_dense1,
         name='dense1',
-        num_units=160,
+        num_units=128,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
     )
@@ -186,7 +187,7 @@ def build_model(batch_size,
     l_dense2 = layers.DenseLayer(
         l_dropout_dense2,
         name='dense2',
-        num_units=160,
+        num_units=128,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
     )
