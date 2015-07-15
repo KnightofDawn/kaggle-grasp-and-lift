@@ -18,8 +18,8 @@ import utils
 #from convnet_deep import build_model
 #from convnet_deep_drop import build_model
 #from convnet_deep_scale import build_model
-from convnet_regions import build_model
-#from convnet_very_deep_drop import build_model
+#from convnet_regions import build_model
+from convnet_very_deep_drop import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs, patience):
@@ -31,7 +31,7 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
     init_file = None
     # the file to which the learned weights will be written
     weights_file = join(root_dir,
-                        'subj%d_weights_deep_nocsp_wn_regions.pickle' % (
+                        'subj%d_weights_deep_nocsp_wn_vd.pickle' % (
                             subj_id))
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
@@ -45,8 +45,10 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
 
     print('creating fixed-size time-windows of size %d' % (window_size))
     # the training windows should be in random order
-    train_slices = batching.get_permuted_windows(train_data, window_size, rand=True)
-    valid_slices = batching.get_permuted_windows(valid_data, window_size, rand=True)
+    train_slices = batching.get_permuted_windows(train_data, window_size,
+                                                 rand=True)
+    valid_slices = batching.get_permuted_windows(valid_data, window_size,
+                                                 rand=True)
     print('there are %d windows for training' % (len(train_slices)))
     print('there are %d windows for validation' % (len(valid_slices)))
 
@@ -156,9 +158,6 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
                     print('nan loss encountered in minibatch %d' % (i))
                     continue
 
-                if np.isnan(valid_loss):
-                    print('nan loss encountered in minibatch %d' % (i))
-                    continue
                 if (i + 1) % 10000 == 0:
                     print('    processed validation minibatch %d of %d...' %
                           (i + 1, num_batches))
@@ -217,7 +216,7 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
 
 
 def main():
-    #subjects = range(1, 9)
+    #subjects = range(9, 13)
     #subjects = range(1, 6)
     # the models that were underfitting
     #subjects = [1, 2, 4, 5]
@@ -225,11 +224,14 @@ def main():
     #subjects = [7, 8, 9, 11, 12]
     #subjects = [10]
     #subjects = range(6, 13)
-    subjects = [5, 6, 7, 8, 9, 11, 12, 10]
+    #subjects = [5, 6, 7, 8, 9, 11, 12, 10]
+    #subjects = [2, 3, 4, 1]
+    subjects = [2]
     #subjects = range(6, 7)
-    #window_size = 2000
-    window_size = 1600
-    subsample = 10
+    window_size = 2000
+    #window_size = 1600
+    #subsample = 10
+    subsample = 5
     max_epochs = 15
     patience = 1
     #max_epochs = 5
