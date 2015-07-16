@@ -3,6 +3,7 @@
 import cPickle as pickle
 import numpy as np
 import theano
+import sys
 
 from lasagne import layers
 from os.path import join
@@ -19,7 +20,8 @@ import utils
 #from convnet_deep_drop import build_model
 #from convnet_deep_scale import build_model
 #from convnet_regions import build_model
-from convnet_very_deep_drop import build_model
+#from convnet_very_deep_drop import build_model
+from convnet_regions_two_equal import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs, patience):
@@ -31,7 +33,7 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
     init_file = None
     # the file to which the learned weights will be written
     weights_file = join(root_dir,
-                        'subj%d_weights_deep_nocsp_wn_vd.pickle' % (
+                        'subj%d_weights_deep_nocsp_wn_two_equal_dozer.pickle' % (
                             subj_id))
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
@@ -60,7 +62,7 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
 
     print('building model...')
     l_out = build_model(None, num_channels,
-                        window_size, num_actions, subsample)
+                        window_size, num_actions)
 
     all_layers = layers.get_all_layers(l_out)
     print('this network has %d learnable parameters' %
@@ -96,7 +98,6 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
     try:
         for epoch in range(max_epochs):
             print('epoch: %d' % (epoch))
-            print('  training...')
             train_losses, training_outputs, training_inputs = [], [], []
             num_batches = (len(train_slices) + batch_size - 1) / batch_size
             t_train_start = time()
@@ -105,18 +106,22 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
                                         train_slices,
                                         train_data,
                                         train_events,
-                                        window_norm=True)):
+                                        window_norm=False)):
+                t_batch_start = time()
                 # hack for faster debugging
                 #if i < 70000:
                 #    continue
                 train_loss, train_output = \
                     train_iter(Xb, yb)
+                batch_duration = time() - t_batch_start
                 if np.isnan(train_loss):
                     print('nan loss encountered in minibatch %d' % (i))
                     continue
-                if (i + 1) % 10000 == 0:
-                    print('    processed training minibatch %d of %d...' %
-                          (i + 1, num_batches))
+                if i % 10 == 0:
+                    eta = batch_duration * (num_batches - i)
+                    print('  training...  (ETA = %02d:%02d)\r'
+                          % divmod(eta, 60)),
+                    sys.stdout.flush()
                 train_losses.append(train_loss)
                 assert len(yb) == len(train_output)
                 for input, output in zip(yb, train_output):
@@ -129,11 +134,11 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
             train_roc = roc_auc_score(training_inputs, training_outputs)
 
             train_duration = time() - t_train_start
+            print('')
             print('    train loss: %.6f' % (avg_train_loss))
             print('    train roc:  %.6f' % (train_roc))
             print('    duration:   %.2f s' % (train_duration))
 
-            print('  validation...')
             valid_losses, valid_outputs, valid_inputs = [], [], []
             num_batches = (len(valid_slices) + batch_size - 1) / batch_size
             t_valid_start = time()
@@ -142,7 +147,7 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
                                         valid_slices,
                                         valid_data,
                                         valid_events,
-                                        window_norm=True)):
+                                        window_norm=False)):
                 #augmented_valid_losses, augmented_valid_outputs = [], []
                 #for offset in range(0, subsample):
                 #    valid_loss, valid_output = \
@@ -152,15 +157,19 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
                 #valid_loss = np.mean(augmented_valid_losses)
                 #valid_output = batching.compute_geometric_mean(
                 #    augmented_valid_outputs)
+                t_batch_start = time()
                 valid_loss, valid_output = \
                     valid_iter(Xb, yb)
                 if np.isnan(valid_loss):
                     print('nan loss encountered in minibatch %d' % (i))
                     continue
+                batch_duration = time() - t_batch_start
+                if i % 10 == 0:
+                    eta = batch_duration * (num_batches - i)
+                    print('  validation...  (ETA = %02d:%02d)\r'
+                          % divmod(eta, 60)),
+                    sys.stdout.flush()
 
-                if (i + 1) % 10000 == 0:
-                    print('    processed validation minibatch %d of %d...' %
-                          (i + 1, num_batches))
                 valid_losses.append(valid_loss)
                 assert len(yb) == len(valid_output)
                 for input, output in zip(yb, valid_output):
@@ -174,6 +183,7 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
                 valid_outputs = np.hstack(valid_outputs)
                 valid_roc = roc_auc_score(valid_inputs, valid_outputs)
                 valid_duration = time() - t_valid_start
+                print('')
                 print('    valid loss: %.6f' % (avg_valid_loss))
                 print('    valid roc:  %.6f' % (valid_roc))
                 print('    duration:   %.2f s' % (valid_duration))
@@ -216,7 +226,7 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
 
 
 def main():
-    #subjects = range(9, 13)
+    subjects = range(2, 13)
     #subjects = range(1, 6)
     # the models that were underfitting
     #subjects = [1, 2, 4, 5]
@@ -226,12 +236,12 @@ def main():
     #subjects = range(6, 13)
     #subjects = [5, 6, 7, 8, 9, 11, 12, 10]
     #subjects = [2, 3, 4, 1]
-    subjects = [2]
+    #subjects = [2]
     #subjects = range(6, 7)
     window_size = 2000
     #window_size = 1600
-    #subsample = 10
-    subsample = 5
+    subsample = 10
+    #subsample = 5
     max_epochs = 15
     patience = 1
     #max_epochs = 5
