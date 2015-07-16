@@ -1,7 +1,19 @@
 #!/usr/bin/env python
 
 import numpy as np
+import theano.tensor as T
 from lasagne import layers
+
+
+class WindowNormLayer(layers.Layer):
+    def __init__(self, incoming, **kwargs):
+        super(WindowNormLayer, self).__init__(incoming, **kwargs)
+
+    def get_output_for(self, input, **kwargs):
+        X_min = T.min(input, axis=2).reshape((-1, input.shape[1], 1))
+        X_max = T.max(input, axis=2).reshape((-1, input.shape[1], 1))
+
+        return (input - X_min) / (X_max - X_min)
 
 
 # given a one-dimensional signal, this layer subsamples the signal

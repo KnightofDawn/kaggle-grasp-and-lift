@@ -1,5 +1,4 @@
-import theano.tensor as T
-import subsample
+import layers_custom
 from lasagne import layers
 from lasagne import nonlinearities
 from lasagne import init
@@ -12,18 +11,8 @@ from lasagne.layers import pool
 
 Conv1DLayer = conv.Conv1DLayer
 MaxPool1DLayer = pool.MaxPool1DLayer
-SubsampleLayer = subsample.SubsampleLayer
-
-
-class WindowNormLayer(layers.Layer):
-    def __init__(self, incoming, **kwargs):
-        super(WindowNormLayer, self).__init__(incoming, **kwargs)
-
-    def get_output_for(self, input, **kwargs):
-        X_min = T.min(input, axis=2).reshape((-1, input.shape[1], 1))
-        X_max = T.max(input, axis=2).reshape((-1, input.shape[1], 1))
-
-        return (input - X_min) / (X_max - X_min)
+SubsampleLayer = layers_custom.SubsampleLayer
+WindowNormLayer = layers_custom.WindowNormLayer
 
 
 def build_model(batch_size,
@@ -48,18 +37,19 @@ def build_model(batch_size,
         name='l_ss_right',
     )
 
-    l_window_left = WindowNormLayer(
-        l_ss_left,
-        name='l_window_left',
-    )
+    #l_window_left = WindowNormLayer(
+    #    l_ss_left,
+    #    name='l_window_left',
+    #)
 
-    l_window_right = WindowNormLayer(
-        l_ss_right,
-        name='l_window_right',
-    )
+    #l_window_right = WindowNormLayer(
+    #    l_ss_right,
+    #    name='l_window_right',
+    #)
 
     l_conv1_left = Conv1DLayer(
-        l_window_left,
+        #l_window_left,
+        l_ss_left,
         name='conv1_left',
         num_filters=8,
         border_mode='valid',
@@ -69,7 +59,8 @@ def build_model(batch_size,
     )
 
     l_conv1_right = Conv1DLayer(
-        l_window_right,
+        #l_window_right,
+        l_ss_right,
         name='conv1_right',
         num_filters=8,
         border_mode='valid',
