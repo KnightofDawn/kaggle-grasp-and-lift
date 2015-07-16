@@ -30,31 +30,15 @@ def build_model(batch_size,
         name='l_ss_left',
     )
 
-    l_ss_mid = SubsampleLayer(
-        l_in,
-        window=(1000, 1400, 4),
-        name='l_ss_mid',
-    )
-
     l_ss_right = SubsampleLayer(
         l_in,
-        window=(1400, None, 2),
+        window=(1000, None, 10),
         name='l_ss_right',
     )
 
     l_conv1_left = Conv1DLayer(
         l_ss_left,
         name='conv1_left',
-        num_filters=8,
-        border_mode='valid',
-        filter_size=3,
-        nonlinearity=nonlinearities.rectify,
-        W=init.Orthogonal(),
-    )
-
-    l_conv1_mid = Conv1DLayer(
-        l_ss_mid,
-        name='conv1_mid',
         num_filters=8,
         border_mode='valid',
         filter_size=3,
@@ -79,13 +63,6 @@ def build_model(batch_size,
         stride=2,
     )
 
-    l_pool1_mid = MaxPool1DLayer(
-        l_conv1_mid,
-        name='pool1_mid',
-        pool_size=3,
-        stride=2,
-    )
-
     l_pool1_right = MaxPool1DLayer(
         l_conv1_right,
         name='pool1_right',
@@ -96,34 +73,18 @@ def build_model(batch_size,
     l_dropout_conv2_left = layers.DropoutLayer(
         l_pool1_left,
         name='drop_conv2_left',
-        p=0.2,
-    )
-
-    l_dropout_conv2_mid = layers.DropoutLayer(
-        l_pool1_mid,
-        name='drop_conv2_mid',
-        p=0.2,
+        p=0.1,
     )
 
     l_dropout_conv2_right = layers.DropoutLayer(
         l_pool1_right,
         name='drop_conv2_right',
-        p=0.2,
+        p=0.1,
     )
 
     l_conv2_left = Conv1DLayer(
         l_dropout_conv2_left,
         name='conv2_left',
-        num_filters=16,
-        border_mode='valid',
-        filter_size=3,
-        nonlinearity=nonlinearities.rectify,
-        W=init.Orthogonal(),
-    )
-
-    l_conv2_mid = Conv1DLayer(
-        l_dropout_conv2_mid,
-        name='conv2_mid',
         num_filters=16,
         border_mode='valid',
         filter_size=3,
@@ -144,34 +105,18 @@ def build_model(batch_size,
     l_dropout_conv3_left = layers.DropoutLayer(
         l_conv2_left,
         name='drop_conv3_left',
-        p=0.3,
-    )
-
-    l_dropout_conv3_mid = layers.DropoutLayer(
-        l_conv2_mid,
-        name='drop_conv3_mid',
-        p=0.3,
+        p=0.2,
     )
 
     l_dropout_conv3_right = layers.DropoutLayer(
         l_conv2_right,
         name='drop_conv3_right',
-        p=0.3,
+        p=0.2,
     )
 
     l_conv3_left = Conv1DLayer(
         l_dropout_conv3_left,
         name='conv3_left',
-        num_filters=32,
-        border_mode='valid',
-        filter_size=3,
-        nonlinearity=nonlinearities.rectify,
-        W=init.Orthogonal(),
-    )
-
-    l_conv3_mid = Conv1DLayer(
-        l_dropout_conv3_mid,
-        name='conv3_mid',
         num_filters=32,
         border_mode='valid',
         filter_size=3,
@@ -196,13 +141,6 @@ def build_model(batch_size,
         stride=2,
     )
 
-    l_pool3_mid = MaxPool1DLayer(
-        l_conv3_mid,
-        name='pool3_mid',
-        pool_size=3,
-        stride=2,
-    )
-
     l_pool3_right = MaxPool1DLayer(
         l_conv3_right,
         name='pool3_right',
@@ -211,7 +149,7 @@ def build_model(batch_size,
     )
 
     l_concat = layers.ConcatLayer(
-        incomings=(l_pool3_left, l_pool3_mid, l_pool3_right),
+        incomings=(l_pool3_left, l_pool3_right),
         name='concat',
     )
 
