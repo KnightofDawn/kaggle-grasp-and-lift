@@ -2,7 +2,6 @@
 
 import cPickle as pickle
 import numpy as np
-
 from lasagne import layers
 from os.path import join
 
@@ -26,18 +25,14 @@ def generate_submission(subj_id, window_size, subsample):
     print('building model...')
     l_out = build_model(None, num_channels,
                         window_size, num_actions, subsample)
-    all_layers = layers.get_all_layers(l_out)
-    print('this network has %d learnable parameters' %
-          (layers.count_params(l_out)))
-    for layer in all_layers:
-        print('Layer %s has output shape %r' %
-              (layer.name, layer.output_shape))
 
     print('predicting for subj_id %d...' % (subj_id))
     preds_file = join('data', 'predictions',
-                      'subj%d_preds_deep_nocsp_wn_extra.csv' % subj_id)
+                      'subj%d_preds_deep_nocsp_wn_extra.csv' %
+                      subj_id)
     weights_file = join(weights_dir,
-                        'subj%d_weights_deep_nocsp_wn_extra.pickle' % subj_id)
+                        'subj%d_weights_deep_nocsp_wn_regions.pickle' %
+                        subj_id)
 
     print('loading model weights from %s' % (weights_file))
     with open(weights_file, 'rb') as ifile:
@@ -100,7 +95,8 @@ def generate_submission(subj_id, window_size, subsample):
 
 
 def main():
-    subjects = range(1, 6)
+    #subjects = range(1, 6)
+    subjects = [1, 3, 4]
     window_size = 1600
     #subjects = range(6, 13)
     #window_size = 2000
