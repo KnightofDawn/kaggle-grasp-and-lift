@@ -34,11 +34,14 @@ def ensemble(subj_id, models, weights_files, window_sizes,
     num_actions = 6
 
     ensemble_predictions_train, ensemble_predictions_valid = [], []
-    for weights, model, window_size in zip(weights_files, models, window_sizes):
+    for weights, model, window_size in zip(
+            weights_files, models, window_sizes):
         print('creating fixed-size time-windows of size %d' % (window_size))
         # the training windows should be in random order
-        train_slices = batching.get_permuted_windows(train_data, window_size, rand=True)
-        valid_slices = batching.get_permuted_windows(valid_data, window_size, rand=True)
+        train_slices = batching.get_permuted_windows(train_data, window_size,
+                                                     rand=True)
+        valid_slices = batching.get_permuted_windows(valid_data, window_size,
+                                                     rand=True)
         print('there are %d windows for training' % (len(train_slices)))
         print('there are %d windows for validation' % (len(valid_slices)))
 
@@ -140,7 +143,8 @@ def ensemble(subj_id, models, weights_files, window_sizes,
 
     print('ensemble results for subject %d' % (subj_id))
     if do_train:
-        avg_predictions_train = batching.compute_geometric_mean(ensemble_predictions_train)
+        avg_predictions_train = batching.compute_geometric_mean(
+            ensemble_predictions_train)
         train_loss = log_loss(train_events, avg_predictions_train)
         train_roc = roc_auc_score(train_events, avg_predictions_train)
         print('    train loss: %.6f' % (train_loss))
@@ -149,7 +153,8 @@ def ensemble(subj_id, models, weights_files, window_sizes,
     if do_valid:
         for a in ensemble_predictions_valid:
             print type(a), a.shape
-        avg_predictions_valid = batching.compute_geometric_mean(ensemble_predictions_valid)
+        avg_predictions_valid = batching.compute_geometric_mean(
+            ensemble_predictions_valid)
         valid_loss = log_loss(valid_events, avg_predictions_valid)
         valid_roc = roc_auc_score(valid_events, avg_predictions_valid)
         print('    valid loss: %.6f' % (valid_loss))
@@ -159,17 +164,22 @@ def ensemble(subj_id, models, weights_files, window_sizes,
 def main():
     do_train = False
     do_valid = True
+
     root_dir = join('data', 'nets')
-    weights_file_patterns = ['subj%d_weights_deep_nocsp_wn_extra.pickle',
-                             'subj%d_weights_deep_nocsp_wn_regions.pickle']
+    weights_file_patterns = [
+        'subj%d_weights_deep_nocsp_wn_two_equal_dozer.pickle',
+        'subj%d_weights_deep_nocsp_wn_two_equal_oneiros.pickle',
+    ]
+
     weights_file_patterns = [join(root_dir, p) for p in weights_file_patterns]
-    window_sizes = [2000, 1600]
+    window_sizes = [2000, 2000]
     import convnet_deep_drop
     import convnet_regions
     models = [convnet_deep_drop, convnet_regions]
     subjects = range(6, 7)
+
     for subj_id in subjects:
-        weights_files = [pattern % subj_id for pattern in weights_file_patterns]
+        weights_files = [ptrn % subj_id for ptrn in weights_file_patterns]
         print('creating ensemble for subject %d using weights:' % (subj_id))
         assert len(models) == len(weights_files) == len(window_sizes)
         for m, wf, ws in zip(models, weights_files, window_sizes):
