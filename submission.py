@@ -12,41 +12,27 @@ import utils
 #from convnet import build_model
 #from convnet_small import build_model
 #from convnet_deep import build_model
-#from convnet_deep_drop import build_model
-from convnet_regions import build_model
+from convnet_deep_drop import build_model
+#from convnet_regions import build_model
 
 
 def generate_submission(subj_id, window_size):
     weights_dir = join('data', 'nets')
 
-    batch_size = 64
+    batch_size = 256
     num_channels = 32
     num_actions = 6
     print('building model...')
     l_out = build_model(None, num_channels,
-<<<<<<< Updated upstream
-                        window_size, num_actions, subsample)
-=======
                         window_size, num_actions)
-    all_layers = layers.get_all_layers(l_out)
-    print('this network has %d learnable parameters' %
-          (layers.count_params(l_out)))
-    for layer in all_layers:
-        print('Layer %s has output shape %r' %
-              (layer.name, layer.output_shape))
->>>>>>> Stashed changes
 
     print('predicting for subj_id %d...' % (subj_id))
     preds_file = join('data', 'predictions',
-                      'subj%d_preds_deep_nocsp_wn_extra.csv' %
+                      'subj%d_preds_wide.csv' %
                       subj_id)
     weights_file = join(weights_dir,
-<<<<<<< Updated upstream
-                        'subj%d_weights_deep_nocsp_wn_regions.pickle' %
+                        'subj%d_weights_deep_nocsp_wide.pickle' %
                         subj_id)
-=======
-                        'subj%d_weights_deep_nocsp_wn_regions.pickle' % subj_id)
->>>>>>> Stashed changes
 
     print('loading model weights from %s' % (weights_file))
     with open(weights_file, 'rb') as ifile:
@@ -86,7 +72,7 @@ def generate_submission(subj_id, window_size):
                                 test_slices,
                                 test_data,
                                 y=None,
-                                window_norm=True)):
+                                window_norm=False)):
         test_output = test_iter(Xb)
         for output in test_output:
             test_outputs.append(output)
@@ -110,11 +96,10 @@ def generate_submission(subj_id, window_size):
 
 def main():
     #subjects = range(1, 6)
-    subjects = [1, 3, 4]
+    subjects = [1, 2, 5, 7, 8, 9, 10, 11, 12]
     #subjects = [6, 7, 8, 10]
-    window_size = 1600
     #subjects = range(6, 13)
-    #window_size = 2000
+    window_size = 2000
 
     for subj_id in subjects:
         generate_submission(subj_id, window_size)
