@@ -17,23 +17,23 @@ import utils
 #from convnet import build_model
 #from convnet_small import build_model
 #from convnet_deep import build_model
-#from convnet_deep_drop import build_model
+from convnet_deep_drop import build_model
 #from convnet_deep_scale import build_model
 #from convnet_regions import build_model
 #from convnet_very_deep_drop import build_model
-from convnet_regions_two_equal import build_model
+#from convnet_regions_two_equal import build_model
 
 
 def train_model(subj_id, window_size, subsample, max_epochs, patience):
     root_dir = join('data', 'nets')
     # the file from which to load pre-trained weights
     #init_file = join(root_dir,
-    #                 'subj%d_weights_deep_nocsp_wn.pickle' % (
+    #                 'subj%d_weights_deep_nocsp_wide.pickle' % (
     #                     subj_id))
     init_file = None
     # the file to which the learned weights will be written
     weights_file = join(root_dir,
-                        'subj%d_weights_deep_nocsp_wn_two_equal_dozer.pickle' % (
+                        'subj%d_weights_deep_nocsp_wide.pickle' % (
                             subj_id))
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
@@ -54,7 +54,8 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
     print('there are %d windows for training' % (len(train_slices)))
     print('there are %d windows for validation' % (len(valid_slices)))
 
-    batch_size = 64
+    #batch_size = 64
+    batch_size = 256
     num_channels = 32
     num_actions = 6
     train_data, valid_data = \
@@ -84,7 +85,7 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
         print('all layers will be trained from random initialization')
 
     lr = theano.shared(np.cast['float32'](0.001))
-    #lr = theano.shared(np.cast['float32'](0.0001))
+    #lr = theano.shared(np.cast['float32'](0.01))
     mntm = 0.9
     print('compiling theano functions...')
     train_iter = iter_funcs.create_iter_funcs_train(lr, mntm, l_out)
@@ -129,8 +130,8 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
                     training_outputs.append(output)
             avg_train_loss = np.mean(train_losses)
 
-            training_inputs = np.hstack(training_inputs)
-            training_outputs = np.hstack(training_outputs)
+            training_inputs = np.vstack(training_inputs)
+            training_outputs = np.vstack(training_outputs)
             train_roc = roc_auc_score(training_inputs, training_outputs)
 
             train_duration = time() - t_train_start
@@ -179,8 +180,8 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
             # allow training without validation
             if valid_losses:
                 avg_valid_loss = np.mean(valid_losses)
-                valid_inputs = np.hstack(valid_inputs)
-                valid_outputs = np.hstack(valid_outputs)
+                valid_inputs = np.vstack(valid_inputs)
+                valid_outputs = np.vstack(valid_outputs)
                 valid_roc = roc_auc_score(valid_inputs, valid_outputs)
                 valid_duration = time() - t_valid_start
                 print('')

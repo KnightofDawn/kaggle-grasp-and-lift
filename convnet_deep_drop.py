@@ -30,17 +30,17 @@ def build_model(batch_size,
         name='l_sampling',
     )
 
-    #l_window = WindowNormLayer(
-    #    l_sampling,
-    #    #l_in,
-    #    name='l_window',
-    #)
+    l_window = WindowNormLayer(
+        l_sampling,
+        #l_in,
+        name='l_window',
+    )
 
     l_conv1 = Conv1DLayer(
-        l_sampling,
-        #l_window,
+        #l_sampling,
+        l_window,
         name='conv1',
-        num_filters=8,
+        num_filters=16,
         border_mode='valid',
         filter_size=3,
         nonlinearity=nonlinearities.rectify,
@@ -54,16 +54,17 @@ def build_model(batch_size,
         stride=2,
     )
 
-    l_dropout_conv2 = layers.DropoutLayer(
-        l_pool1,
-        name='drop_conv2',
-        p=0.2,
-    )
+    #l_dropout_conv2 = layers.DropoutLayer(
+    #    l_pool1,
+    #    name='drop_conv2',
+    #    p=0.2,
+    #)
 
     l_conv2 = Conv1DLayer(
-        l_dropout_conv2,
+        #l_dropout_conv2,
+        l_pool1,
         name='conv2',
-        num_filters=16,
+        num_filters=32,
         border_mode='valid',
         filter_size=3,
         nonlinearity=nonlinearities.rectify,
@@ -77,32 +78,34 @@ def build_model(batch_size,
         stride=2,
     )
 
-    l_dropout_conv3 = layers.DropoutLayer(
-        l_pool2,
-        name='drop_conv3',
-        p=0.3,
-    )
+    #l_dropout_conv3 = layers.DropoutLayer(
+    #    l_pool2,
+    #    name='drop_conv3',
+    #    p=0.3,
+    #)
 
     l_conv3 = Conv1DLayer(
-        l_dropout_conv3,
+        #l_dropout_conv3,
+        l_pool2,
         name='conv3',
-        num_filters=32,
+        num_filters=64,
         border_mode='valid',
         filter_size=3,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
     )
 
-    l_dropout_conv4 = layers.DropoutLayer(
-        l_conv3,
-        name='drop_conv4',
-        p=0.4,
-    )
+    #l_dropout_conv4 = layers.DropoutLayer(
+    #    l_conv3,
+    #    name='drop_conv4',
+    #    p=0.4,
+    #)
 
     l_conv4 = Conv1DLayer(
-        l_dropout_conv4,
+        #l_dropout_conv4,
+        l_conv3,
         name='conv4',
-        num_filters=32,
+        num_filters=64,
         border_mode='valid',
         filter_size=3,
         nonlinearity=nonlinearities.rectify,

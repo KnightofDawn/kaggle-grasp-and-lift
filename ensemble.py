@@ -13,7 +13,7 @@ from sklearn.metrics import roc_auc_score, log_loss
 from time import time
 
 
-def ensemble(subj_id, models, weights_files, window_sizes,
+def ensemble(subj_id, models, weights_files, window_size,
              do_train=True, do_valid=True):
 
     print('loading time series for subject %d...' % (subj_id))
@@ -26,6 +26,14 @@ def ensemble(subj_id, models, weights_files, window_sizes,
     print('using %d time series for training' % (len(train_data)))
     print('using %d time series for validation' % (len(valid_data)))
 
+    print('creating fixed-size time-windows of size %d' % (window_size))
+    train_slices = batching.get_permuted_windows(train_data, window_size,
+                                                 rand=True)
+    valid_slices = batching.get_permuted_windows(valid_data, window_size,
+                                                 rand=True)
+    print('there are %d windows for training' % (len(train_slices)))
+    print('there are %d windows for validation' % (len(valid_slices)))
+
     train_data, valid_data = \
         utils.preprocess(subj_id, train_data, valid_data)
 
@@ -34,17 +42,7 @@ def ensemble(subj_id, models, weights_files, window_sizes,
     num_actions = 6
 
     ensemble_predictions_train, ensemble_predictions_valid = [], []
-    for weights, model, window_size in zip(
-            weights_files, models, window_sizes):
-        print('creating fixed-size time-windows of size %d' % (window_size))
-        # the training windows should be in random order
-        train_slices = batching.get_permuted_windows(train_data, window_size,
-                                                     rand=True)
-        valid_slices = batching.get_permuted_windows(valid_data, window_size,
-                                                     rand=True)
-        print('there are %d windows for training' % (len(train_slices)))
-        print('there are %d windows for validation' % (len(valid_slices)))
-
+    for weights, model in zip(weights_files, models):
         build_model = model.build_model
         print('building model...')
         l_out = build_model(None, num_channels,
@@ -125,11 +123,6 @@ def ensemble(subj_id, models, weights_files, window_sizes,
                     valid_outputs.append(output)
             avg_valid_loss = np.mean(valid_losses)
 
-            padding = np.zeros((window_size - 1, 6), dtype=np.int32)
-            for pad in padding:
-                valid_inputs.append(pad)
-                valid_outputs.append(pad)
-
             valid_inputs = np.vstack(valid_inputs)
             valid_outputs = np.vstack(valid_outputs)
             print valid_outputs.shape
@@ -145,18 +138,33 @@ def ensemble(subj_id, models, weights_files, window_sizes,
     if do_train:
         avg_predictions_train = batching.compute_geometric_mean(
             ensemble_predictions_train)
-        train_loss = log_loss(train_events, avg_predictions_train)
-        train_roc = roc_auc_score(train_events, avg_predictions_train)
+        train_losses = []
+        for i in range(0, 6):
+            train_losses.append(log_loss(training_inputs[:, i],
+                                         avg_predictions_train[:, i]))
+        train_loss = np.mean(train_losses)
+        train_roc = roc_auc_score(training_inputs, avg_predictions_train)
         print('    train loss: %.6f' % (train_loss))
         print('    train roc:  %.6f' % (train_roc))
 
     if do_valid:
         for a in ensemble_predictions_valid:
             print type(a), a.shape
-        avg_predictions_valid = batching.compute_geometric_mean(
+        avg_predictions_valid_a = batching.compute_arithmetic_mean(
             ensemble_predictions_valid)
-        valid_loss = log_loss(valid_events, avg_predictions_valid)
-        valid_roc = roc_auc_score(valid_events, avg_predictions_valid)
+        avg_predictions_valid_g = batching.compute_geometric_mean(
+            ensemble_predictions_valid)
+
+        valid_losses = []
+        for i in range(0, 6):
+            valid_losses.append(log_loss(valid_inputs[:, i],
+                                         avg_predictions_valid_a[:, i]))
+        valid_loss = np.mean(valid_losses)
+        valid_roc = roc_auc_score(valid_inputs, avg_predictions_valid_a)
+        print('    valid loss: %.6f' % (valid_loss))
+        print('    valid roc:  %.6f' % (valid_roc))
+        valid_loss = log_loss(valid_inputs, avg_predictions_valid_g)
+        valid_roc = roc_auc_score(valid_inputs, avg_predictions_valid_g)
         print('    valid loss: %.6f' % (valid_loss))
         print('    valid roc:  %.6f' % (valid_roc))
 
@@ -167,24 +175,29 @@ def main():
 
     root_dir = join('data', 'nets')
     weights_file_patterns = [
-        'subj%d_weights_deep_nocsp_wn_two_equal_dozer.pickle',
+        'subj%d_weights_deep_nocsp_wn_extra.pickle',
+        #'subj%d_weights_deep_nocsp_wn_two_equal_dozer.pickle',
         'subj%d_weights_deep_nocsp_wn_two_equal_oneiros.pickle',
     ]
 
     weights_file_patterns = [join(root_dir, p) for p in weights_file_patterns]
-    window_sizes = [2000, 2000]
     import convnet_deep_drop
-    import convnet_regions
-    models = [convnet_deep_drop, convnet_regions]
-    subjects = range(6, 7)
+    #import convnet_regions
+    import convnet_regions_two_equal
+    models = [
+        convnet_deep_drop,
+        convnet_regions_two_equal,
+    ]
+    window_size = 2000
+    subjects = range(1, 4)
 
     for subj_id in subjects:
         weights_files = [ptrn % subj_id for ptrn in weights_file_patterns]
         print('creating ensemble for subject %d using weights:' % (subj_id))
-        assert len(models) == len(weights_files) == len(window_sizes)
-        for m, wf, ws in zip(models, weights_files, window_sizes):
-            print('  %s (%d): %s' % (m.__name__, ws, basename(wf)))
-        ensemble(subj_id, models, weights_files, window_sizes,
+        assert len(models) == len(weights_files)
+        for m, wf in zip(models, weights_files):
+            print('  %s (%d): %s' % (m.__name__, window_size, basename(wf)))
+        ensemble(subj_id, models, weights_files, window_size,
                  do_train=do_train, do_valid=do_valid)
 
 
