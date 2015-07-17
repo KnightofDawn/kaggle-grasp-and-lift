@@ -22,11 +22,15 @@ from convnet_deep_drop import build_model
 #from convnet_regions import build_model
 #from convnet_very_deep_drop import build_model
 #from convnet_regions_two_equal import build_model
+#from convnet_deeper import build_model
 
 
-def train_model(subj_id, window_size, subsample, max_epochs, patience):
+def train_model(subj_id, window_size, max_epochs, patience):
     root_dir = join('data', 'nets')
     # the file from which to load pre-trained weights
+    init_file = join(root_dir,
+                     'subj%d_weights_deep_nocsp_wn_deeper_oneiros.pickle' % (
+                         subj_id))
     #init_file = join(root_dir,
     #                 'subj%d_weights_deep_nocsp_wide.pickle' % (
     #                     subj_id))
@@ -84,8 +88,8 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
     else:
         print('all layers will be trained from random initialization')
 
-    lr = theano.shared(np.cast['float32'](0.001))
-    #lr = theano.shared(np.cast['float32'](0.01))
+    #lr = theano.shared(np.cast['float32'](0.001))
+    lr = theano.shared(np.cast['float32'](0.01))
     mntm = 0.9
     print('compiling theano functions...')
     train_iter = iter_funcs.create_iter_funcs_train(lr, mntm, l_out)
@@ -227,30 +231,30 @@ def train_model(subj_id, window_size, subsample, max_epochs, patience):
 
 
 def main():
-    subjects = range(2, 13)
+    subjects = [1, 10, 11, 12, 7, 8, 9, 2]
     #subjects = range(1, 6)
     # the models that were underfitting
     #subjects = [1, 2, 4, 5]
     #subjects = [1]
     #subjects = [7, 8, 9, 11, 12]
     #subjects = [10]
-    #subjects = range(6, 13)
+    #subjects = range(1, 13)
     #subjects = [5, 6, 7, 8, 9, 11, 12, 10]
     #subjects = [2, 3, 4, 1]
     #subjects = [2]
     #subjects = range(6, 7)
     window_size = 2000
     #window_size = 1600
-    subsample = 10
+    #subsample = 10
     #subsample = 5
-    max_epochs = 15
+    max_epochs = 10
     patience = 1
     #max_epochs = 5
     model_train_losses, model_valid_losses = [], []
     model_train_rocs, model_valid_rocs = [], []
     for subj_id in subjects:
         model_train_loss, model_valid_loss, model_train_roc, model_valid_roc =\
-            train_model(subj_id, window_size, subsample, max_epochs, patience)
+            train_model(subj_id, window_size, max_epochs, patience)
         print('\n%s subject %d %s' % ('*' * 10, subj_id, '*' * 10))
         print(' model training loss = %.5f' % (model_train_loss))
         print(' model valid loss    = %.5f' % (model_valid_loss))
