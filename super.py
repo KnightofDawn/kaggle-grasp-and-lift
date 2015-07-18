@@ -28,12 +28,16 @@ from convnet_deep_drop import build_model
 def train_model(window_size, max_epochs, patience):
     root_dir = join('data', 'nets')
     # the file from which to load pre-trained weights
-    init_file = join(root_dir,
-                     'subj%d_weights_deep_nocsp_wide.pickle' % (
-                         4))
+    #init_file = join(root_dir,
+    #                 'subj%d_weights_deep_nocsp_wide.pickle' % (
+    #                     4))
+    #init_file = join(root_dir,
+    #                 'weights_super.pickle')
+    init_file = None
     # the file to which the learned weights will be written
     weights_file = join(root_dir,
-                        'weights_super.pickle')
+                        'weights_super_random_init.pickle')
+    temp_weights_file = join(root_dir, 'super_epoch_%d.pickle')
     train_data, train_events = [], []
     valid_data, valid_events = [], []
     for subj_id in range(1, 13):
@@ -212,6 +216,11 @@ def train_model(window_size, max_epochs, patience):
                 model_train_loss = avg_train_loss
                 best_valid_loss = avg_valid_loss
                 best_weights = layers.get_all_param_values(l_out)
+
+                temp_file = temp_weights_file % (epoch)
+                print('saving temporary best weights to %s' % (temp_file))
+                with open(temp_file, 'wb') as ofile:
+                    pickle.dump(best_weights, ofile, protocol=pickle.HIGHEST_PROTOCOL)
 
             if epoch > best_epoch + patience:
                 break
