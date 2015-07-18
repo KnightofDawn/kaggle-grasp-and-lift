@@ -48,7 +48,7 @@ def load_subject_test(subj_id):
 
 # compute a normalizing transformation over all the training data,
 # and apply this same transform to unseen data
-def preprocess(subj_id, train_data, test_data):
+def preprocess(train_data, test_data):
     train_data = [data.astype(np.float32) for data in train_data]
     test_data = [data.astype(np.float32) for data in test_data]
 
