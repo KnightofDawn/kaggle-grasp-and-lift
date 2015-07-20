@@ -49,6 +49,36 @@ class SubsampleLayer(layers.Layer):
         return input[:, :, start:stop][:, :, ::-1][:, :, ::step][:, :, ::-1]
 
 
+class MeanSubsampleLayer(layers.Layer):
+    def __init__(self, incoming, window, **kwargs):
+        super(MeanSubsampleLayer, self).__init__(incoming, **kwargs)
+        if not isinstance(window, slice):
+            self.window = slice(*window)
+        else:
+            self.window = window
+
+    def get_output_shape_for(self, input_shape):
+        output_shape = list(input_shape)
+        # compute the output window length based on the range of the window
+        if self.window.stop is None and self.window.start is None:
+            output_shape[2] = input_shape[2] / self.window.step
+        elif self.window.stop is None:
+            output_shape[2] = (input_shape[2] -
+                               self.window.start) / self.window.step
+        elif self.window.start is None:
+            output_shape[2] = self.window.stop / self.window.step
+        else:
+            output_shape[2] = (self.window.stop -
+                               self.window.start) / self.window.step
+        return tuple(output_shape)
+
+    def get_output_for(self, input, **kwargs):
+        return T.mean(input.reshape(input.shape[0],
+                                    input.shape[1],
+                                    input.shape[2] / self.window.step,
+                                    self.window.step), axis=3)
+
+
 def run_subsample_tests():
     l_in = layers.InputLayer(shape=(64, 32, 2000))
     l_sample = SubsampleLayer(l_in, window=(None, 1000, 10))
@@ -113,10 +143,25 @@ def run_window_tests():
     for i in range(0, 256):
         expected_output[i, ...] = batching.normalize_window(X[i, ...])
     actual_output = l_window.get_output_for(X)
+    #assert (expected_output == actual_output).all()
     assert np.allclose(expected_output, actual_output.eval(),
                        atol=1e-05, rtol=1e-05)
 
 
+def run_mean_tests():
+    X = np.random.normal(0, 1, (256, 32, 2000))
+    l_in = layers.InputLayer(shape=(256, 32, 2000))
+    l_mean = MeanSubsampleLayer(l_in, window=(None, None, 10))
+    expected_output = np.mean(X.reshape(256, 32, 200, 10), axis=3)
+    actual_output = l_mean.get_output_for(X).eval()
+    assert np.allclose(expected_output, actual_output,
+                       atol=1e-05, rtol=1e-05)
+
+
 if __name__ == '__main__':
+    #print('running SubsampleLayer tests')
     #run_subsample_tests()
-    run_window_tests()
+    #print('running WindowNormLayer tests')
+    #run_window_tests()
+    print('running MeanSubsampleLayer tests')
+    run_mean_tests()
