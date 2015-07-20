@@ -5,10 +5,9 @@ from os.path import join
 
 def make_submission():
     subjects = range(1, 13)
-    submission_file = 'data/submissions/convnet_deep_nocsp_wn_extra.csv'
     submission_file = join('data',
                            'submissions',
-                           'convnet_deep_nocsp_wn_extra.csv')
+                           'convnet_deep_nocsp_wn_extra13467810.csv')
     header = ['id', 'HandStart', 'FirstDigitTouch', 'BothStartLoadPhase',
               'LiftOff', 'Replace', 'BothReleased']
     print('generating submission file: %s' % (submission_file))

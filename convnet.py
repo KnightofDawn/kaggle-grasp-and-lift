@@ -1,3 +1,4 @@
+import layers_custom
 from lasagne import layers
 from lasagne import nonlinearities
 from lasagne import init
@@ -10,19 +11,35 @@ from lasagne.layers import pool
 
 Conv1DLayer = conv.Conv1DLayer
 MaxPool1DLayer = pool.MaxPool1DLayer
+SubsampleLayer = layers_custom.SubsampleLayer
+WindowNormLayer = layers_custom.WindowNormLayer
 
 
 def build_model(batch_size,
                 num_channels,
                 input_length,
-                output_dim,):
+                output_dim,
+                subsample,):
     l_in = layers.InputLayer(
         shape=(batch_size, num_channels, input_length),
         name='l_in',
     )
 
-    l_conv1 = Conv1DLayer(
+    l_sampling = SubsampleLayer(
         l_in,
+        window=(None, None, subsample),
+        name='l_sampling',
+    )
+
+    l_window = WindowNormLayer(
+        l_sampling,
+        #l_in,
+        name='l_window',
+    )
+
+    l_conv1 = Conv1DLayer(
+        l_window,
+        #l_sampling,
         name='conv1',
         num_filters=8,
         border_mode='valid',
