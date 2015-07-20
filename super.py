@@ -17,12 +17,12 @@ import utils
 #from convnet import build_model
 #from convnet_small import build_model
 #from convnet_deep import build_model
-from convnet_deep_drop import build_model
+#from convnet_deep_drop import build_model
 #from convnet_deep_scale import build_model
 #from convnet_regions import build_model
 #from convnet_very_deep_drop import build_model
 #from convnet_regions_two_equal import build_model
-#from convnet_deeper import build_model
+from convnet_deeper import build_model
 
 
 def train_model(window_size, max_epochs, patience):
@@ -32,12 +32,12 @@ def train_model(window_size, max_epochs, patience):
     #                 'subj%d_weights_deep_nocsp_wide.pickle' % (
     #                     4))
     #init_file = join(root_dir,
-    #                 'weights_super.pickle')
+    #                 'super_epoch_4.pickle')
     init_file = None
     # the file to which the learned weights will be written
     weights_file = join(root_dir,
-                        'weights_super_random_init.pickle')
-    temp_weights_file = join(root_dir, 'super_epoch_%d.pickle')
+                        'weights_super_deeper.pickle')
+    temp_weights_file = join(root_dir, 'super_epoch_%d_deeper.pickle')
     train_data, train_events = [], []
     valid_data, valid_events = [], []
     for subj_id in range(1, 13):
@@ -46,7 +46,7 @@ def train_model(window_size, max_epochs, patience):
         print('  creating train and validation sets...')
         subj_train_data, subj_train_events, subj_valid_data, subj_valid_events = \
             utils.split_train_test_data(subj_data_list, subj_events_list,
-                                         val_size=2, rand=False)
+                                        val_size=2, rand=False)
         train_data += subj_train_data
         train_events += subj_train_events
         valid_data += subj_valid_data
@@ -130,8 +130,10 @@ def train_model(window_size, max_epochs, patience):
                     continue
                 if i % 10 == 0:
                     eta = batch_duration * (num_batches - i)
-                    print('  training...  (ETA = %02d:%02d)\r'
-                          % divmod(eta, 60)),
+                    m, s = divmod(eta, 60)
+                    h, m = divmod(m, 60)
+                    print('  training...  (ETA = %d:%02d:%02d)\r'
+                          % (h, m, s))
                     sys.stdout.flush()
                 train_losses.append(train_loss)
                 assert len(yb) == len(train_output)
@@ -177,8 +179,10 @@ def train_model(window_size, max_epochs, patience):
                 batch_duration = time() - t_batch_start
                 if i % 10 == 0:
                     eta = batch_duration * (num_batches - i)
-                    print('  validation...  (ETA = %02d:%02d)\r'
-                          % divmod(eta, 60)),
+                    m, s = divmod(eta, 60)
+                    h, m = divmod(m, 60)
+                    print('  validation...  (ETA = %d:%02d:%02d)\r'
+                          % (h, m, s))
                     sys.stdout.flush()
 
                 valid_losses.append(valid_loss)
@@ -220,7 +224,8 @@ def train_model(window_size, max_epochs, patience):
                 temp_file = temp_weights_file % (epoch)
                 print('saving temporary best weights to %s' % (temp_file))
                 with open(temp_file, 'wb') as ofile:
-                    pickle.dump(best_weights, ofile, protocol=pickle.HIGHEST_PROTOCOL)
+                    pickle.dump(best_weights, ofile,
+                                protocol=pickle.HIGHEST_PROTOCOL)
 
             if epoch > best_epoch + patience:
                 break
