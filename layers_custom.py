@@ -49,7 +49,7 @@ class SubsampleLayer(layers.Layer):
         return input[:, :, start:stop][:, :, ::-1][:, :, ::step][:, :, ::-1]
 
 
-def run_tests():
+def run_subsample_tests():
     l_in = layers.InputLayer(shape=(64, 32, 2000))
     l_sample = SubsampleLayer(l_in, window=(None, 1000, 10))
 
@@ -104,5 +104,19 @@ def run_tests():
     assert (expected_output == actual_output).all(), 'bad subsampling'
 
 
+def run_window_tests():
+    import batching
+    X = np.random.normal(0, 1, (256, 32, 200))
+    l_in = layers.InputLayer(shape=(256, 32, 200))
+    l_window = WindowNormLayer(l_in)
+    expected_output = np.empty(X.shape, dtype=np.float32)
+    for i in range(0, 256):
+        expected_output[i, ...] = batching.normalize_window(X[i, ...])
+    actual_output = l_window.get_output_for(X)
+    assert np.allclose(expected_output, actual_output.eval(),
+                       atol=1e-05, rtol=1e-05)
+
+
 if __name__ == '__main__':
-    run_tests()
+    #run_subsample_tests()
+    run_window_tests()
