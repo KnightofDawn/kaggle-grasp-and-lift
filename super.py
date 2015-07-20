@@ -141,7 +141,7 @@ def train_model(window_size, max_epochs, patience):
                     m, s = divmod(eta, 60)
                     h, m = divmod(m, 60)
                     print('  training...  (ETA = %d:%02d:%02d)\r'
-                          % (h, m, s))
+                          % (h, m, s)),
                     sys.stdout.flush()
 
             avg_train_loss = np.mean(train_losses)
@@ -180,7 +180,6 @@ def train_model(window_size, max_epochs, patience):
                 if np.isnan(valid_loss):
                     print('nan loss encountered in minibatch %d' % (i))
                     continue
-
                 valid_losses.append(valid_loss)
                 assert len(yb) == len(valid_output)
                 for input, output in zip(yb, valid_output):
@@ -193,7 +192,7 @@ def train_model(window_size, max_epochs, patience):
                     m, s = divmod(eta, 60)
                     h, m = divmod(m, 60)
                     print('  validation...  (ETA = %d:%02d:%02d)\r'
-                          % (h, m, s))
+                          % (h, m, s)),
                     sys.stdout.flush()
 
             # allow training without validation
