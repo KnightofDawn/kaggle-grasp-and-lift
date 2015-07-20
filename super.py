@@ -31,13 +31,13 @@ def train_model(window_size, max_epochs, patience):
     #init_file = join(root_dir,
     #                 'subj%d_weights_deep_nocsp_wide.pickle' % (
     #                     4))
-    #init_file = join(root_dir,
-    #                 'super_epoch_4.pickle')
-    init_file = None
+    init_file = join(root_dir,
+                     'weights_super_deeper.pickle')
+    #init_file = None
     # the file to which the learned weights will be written
     weights_file = join(root_dir,
-                        'weights_super_deeper.pickle')
-    temp_weights_file = join(root_dir, 'super_epoch_%d_deeper.pickle')
+                        'weights_super_deeper_lr.pickle')
+    temp_weights_file = join(root_dir, 'super_epoch_%d_deeper_lr.pickle')
     train_data, train_events = [], []
     valid_data, valid_events = [], []
     for subj_id in range(1, 13):
@@ -71,7 +71,8 @@ def train_model(window_size, max_epochs, patience):
     train_data, valid_data = \
         utils.preprocess(train_data, valid_data)
 
-    print('building model...')
+    print('building model %s...' % (
+        sys.modules[build_model.__module__].__name__))
     l_out = build_model(None, num_channels,
                         window_size, num_actions)
 
@@ -94,8 +95,8 @@ def train_model(window_size, max_epochs, patience):
     else:
         print('all layers will be trained from random initialization')
 
-    #lr = theano.shared(np.cast['float32'](0.001))
-    lr = theano.shared(np.cast['float32'](0.01))
+    lr = theano.shared(np.cast['float32'](0.001))
+    #lr = theano.shared(np.cast['float32'](0.01))
     mntm = 0.9
     print('compiling theano functions...')
     train_iter = iter_funcs.create_iter_funcs_train(lr, mntm, l_out)
@@ -124,10 +125,17 @@ def train_model(window_size, max_epochs, patience):
                 #    continue
                 train_loss, train_output = \
                     train_iter(Xb, yb)
-                batch_duration = time() - t_batch_start
                 if np.isnan(train_loss):
                     print('nan loss encountered in minibatch %d' % (i))
                     continue
+
+                train_losses.append(train_loss)
+                assert len(yb) == len(train_output)
+                for input, output in zip(yb, train_output):
+                    training_inputs.append(input)
+                    training_outputs.append(output)
+
+                batch_duration = time() - t_batch_start
                 if i % 10 == 0:
                     eta = batch_duration * (num_batches - i)
                     m, s = divmod(eta, 60)
@@ -135,11 +143,7 @@ def train_model(window_size, max_epochs, patience):
                     print('  training...  (ETA = %d:%02d:%02d)\r'
                           % (h, m, s))
                     sys.stdout.flush()
-                train_losses.append(train_loss)
-                assert len(yb) == len(train_output)
-                for input, output in zip(yb, train_output):
-                    training_inputs.append(input)
-                    training_outputs.append(output)
+
             avg_train_loss = np.mean(train_losses)
 
             training_inputs = np.vstack(training_inputs)
@@ -176,6 +180,13 @@ def train_model(window_size, max_epochs, patience):
                 if np.isnan(valid_loss):
                     print('nan loss encountered in minibatch %d' % (i))
                     continue
+
+                valid_losses.append(valid_loss)
+                assert len(yb) == len(valid_output)
+                for input, output in zip(yb, valid_output):
+                    valid_inputs.append(input)
+                    valid_outputs.append(output)
+
                 batch_duration = time() - t_batch_start
                 if i % 10 == 0:
                     eta = batch_duration * (num_batches - i)
@@ -184,12 +195,6 @@ def train_model(window_size, max_epochs, patience):
                     print('  validation...  (ETA = %d:%02d:%02d)\r'
                           % (h, m, s))
                     sys.stdout.flush()
-
-                valid_losses.append(valid_loss)
-                assert len(yb) == len(valid_output)
-                for input, output in zip(yb, valid_output):
-                    valid_inputs.append(input)
-                    valid_outputs.append(output)
 
             # allow training without validation
             if valid_losses:
