@@ -35,7 +35,7 @@ def ensemble(subj_id, models, weights_files, window_size,
     print('there are %d windows for validation' % (len(valid_slices)))
 
     train_data, valid_data = \
-        utils.preprocess(subj_id, train_data, valid_data)
+        utils.preprocess(train_data, valid_data)
 
     batch_size = 4096
     num_channels = 32
@@ -70,7 +70,7 @@ def ensemble(subj_id, models, weights_files, window_size,
                                         train_slices,
                                         train_data,
                                         train_events,
-                                        window_norm=True)):
+                                        window_norm=False)):
                 train_loss, train_output = \
                     valid_iter(Xb, yb)
                 if np.isnan(train_loss):
@@ -87,8 +87,8 @@ def ensemble(subj_id, models, weights_files, window_size,
                     training_outputs.append(output)
             avg_train_loss = np.mean(train_losses)
 
-            training_inputs = np.hstack(training_inputs)
-            training_outputs = np.hstack(training_outputs)
+            training_inputs = np.vstack(training_inputs)
+            training_outputs = np.vstack(training_outputs)
             train_roc = roc_auc_score(training_inputs, training_outputs)
             ensemble_predictions_train.append(training_outputs)
             train_duration = time() - t_train_start
@@ -106,7 +106,7 @@ def ensemble(subj_id, models, weights_files, window_size,
                                         valid_slices,
                                         valid_data,
                                         valid_events,
-                                        window_norm=True)):
+                                        window_norm=False)):
                 valid_loss, valid_output = \
                     valid_iter(Xb, yb)
                 if np.isnan(valid_loss):
@@ -138,11 +138,8 @@ def ensemble(subj_id, models, weights_files, window_size,
     if do_train:
         avg_predictions_train = batching.compute_geometric_mean(
             ensemble_predictions_train)
-        train_losses = []
-        for i in range(0, 6):
-            train_losses.append(log_loss(training_inputs[:, i],
-                                         avg_predictions_train[:, i]))
-        train_loss = np.mean(train_losses)
+        train_loss = np.mean([log_loss(training_inputs[:, i],
+                              avg_predictions_train[:, i]) for i in range(6)])
         train_roc = roc_auc_score(training_inputs, avg_predictions_train)
         print('    train loss: %.6f' % (train_loss))
         print('    train roc:  %.6f' % (train_roc))
@@ -150,21 +147,14 @@ def ensemble(subj_id, models, weights_files, window_size,
     if do_valid:
         for a in ensemble_predictions_valid:
             print type(a), a.shape
-        avg_predictions_valid_a = batching.compute_arithmetic_mean(
-            ensemble_predictions_valid)
-        avg_predictions_valid_g = batching.compute_geometric_mean(
+        avg_predictions_valid = batching.compute_geometric_mean(
             ensemble_predictions_valid)
 
-        valid_losses = []
-        for i in range(0, 6):
-            valid_losses.append(log_loss(valid_inputs[:, i],
-                                         avg_predictions_valid_a[:, i]))
-        valid_loss = np.mean(valid_losses)
-        valid_roc = roc_auc_score(valid_inputs, avg_predictions_valid_a)
-        print('    valid loss: %.6f' % (valid_loss))
-        print('    valid roc:  %.6f' % (valid_roc))
-        valid_loss = log_loss(valid_inputs, avg_predictions_valid_g)
-        valid_roc = roc_auc_score(valid_inputs, avg_predictions_valid_g)
+        valid_loss = np.mean([log_loss(valid_inputs[:, i],
+                              avg_predictions_valid[:, i]) for i in range(6)])
+
+        valid_roc = roc_auc_score(valid_inputs, avg_predictions_valid)
+        print('geometric mean')
         print('    valid loss: %.6f' % (valid_loss))
         print('    valid roc:  %.6f' % (valid_roc))
 
@@ -175,21 +165,24 @@ def main():
 
     root_dir = join('data', 'nets')
     weights_file_patterns = [
-        'subj%d_weights_deep_nocsp_wn_extra.pickle',
+        'subj%d_weights_deep_nocsp_wide.pickle',
         #'subj%d_weights_deep_nocsp_wn_two_equal_dozer.pickle',
-        'subj%d_weights_deep_nocsp_wn_two_equal_oneiros.pickle',
+        #'subj%d_weights_deep_nocsp_wn_two_equal_oneiros.pickle',
     ]
 
     weights_file_patterns = [join(root_dir, p) for p in weights_file_patterns]
     import convnet_deep_drop
-    #import convnet_regions
-    import convnet_regions_two_equal
+    import convnet_deeper
+    #import convnet_regions_two_equal
     models = [
         convnet_deep_drop,
-        convnet_regions_two_equal,
+        #convnet_regions_two_equal,
+        #convnet_regions_two_equal,
+        convnet_deeper,
     ]
     window_size = 2000
-    subjects = range(1, 4)
+    #subjects = range(1, 13)
+    subjects = [4]
 
     for subj_id in subjects:
         weights_files = [ptrn % subj_id for ptrn in weights_file_patterns]
