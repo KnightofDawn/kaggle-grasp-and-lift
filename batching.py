@@ -58,26 +58,39 @@ def batch_iterator(bs, W, X, y=None, window_norm=False):
     for i in range(N):
         Wb = W[i * bs:(i + 1) * bs]
 
+        #X_batch = np.empty((bs, X[0].shape[0], window_size), dtype=np.float32)
+        #if y is not None:
+        #    y_batch = np.empty((bs, 6), dtype=np.int32)
+        #else:
+        #    y_batch = None
         X_batch_list, y_batch_list = [], []
         # index: which time series to take the window from
         # s:     the slice to take from that time series
-        for index, s in Wb:
+        for j, (index, s) in enumerate(Wb):
             if window_norm:
                 X_window = normalize_window(X[index][:, s])
             else:
                 X_window = X[index][:, s]
             X_batch_list.append(X_window)
+            #X_batch[j, ...] = X_window
             if y is not None:
-                y_batch_list.append(y[index][:, s][:, -1])
+                y_window = y[index][:, s][:, -1]
+                #y_batch[j, ...] = y_window
+                y_batch_list.append(y_window)
 
         # reshape to (batch_size, num_channels, window_size)
         X_batch = np.vstack(X_batch_list).reshape(-1,
                                                   X[0].shape[0], window_size)
-        if y_batch_list:
-            y_batch = np.vstack(y_batch_list)
-        else:
+        if not y_batch_list:
             y_batch = None
-
+        else:
+            y_batch = np.vstack(y_batch_list)
+        #if j < 63:
+        #    print('discarding rest of batch')
+        #    X_batch = X_batch[:j, ...]
+        #    y_batch = y_batch[:j, ...]
+        #assert X_batch.shape == (64, 32, 2000), 'bad X shape'
+        #assert y_batch.shape == (64, 6), 'bad y shape'
         yield X_batch, y_batch
 
 
@@ -89,11 +102,31 @@ def compute_geometric_mean(mat_list):
     return geom_mean
 
 
+def compute_arithmetic_mean(mat_list):
+    mean = np.mean(np.array(mat_list), axis=0)
+
+    return mean
+
+
 if __name__ == '__main__':
-    data = np.arange(5 * 10).reshape(5, 10)
-    slices = get_series_window_slices(data.shape[1], 3)
-    print data
-    print slices
-    print('slicing:')
-    for s in slices:
-        print data[:, s]
+    #data = np.arange(5 * 10).reshape(5, 10)
+    #slices = get_series_window_slices(data.shape[1], 3)
+    #print data
+    #print slices
+    #print('slicing:')
+    #for s in slices:
+    #    print data[:, s]
+
+    from sklearn.metrics import log_loss, roc_auc_score
+    p1 = np.random.uniform(0, 1, (2000, 6))
+    p2 = np.random.uniform(0, 1, (2000, 6))
+    p3 = np.random.uniform(0, 1, (2000, 6))
+
+    labels = np.random.randint(0, 2, (2000, 6))
+
+    avg = compute_geometric_mean([p1, p2, p3])
+    loss = log_loss(labels, avg)
+    roc = roc_auc_score(labels, avg)
+
+    print('loss = %.5f' % loss)
+    print('roc = %.5f' % roc)

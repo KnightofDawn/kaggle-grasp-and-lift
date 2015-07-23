@@ -225,15 +225,16 @@ def train_model(subj_id, window_size, max_epochs, patience):
 
 def main():
     #subjects = [1, 10, 11, 12, 7, 8, 9, 2]
+    #subjects = [3, 5, 6, 4]
     #subjects = range(1, 6)
     # the models that were underfitting
-    #subjects = [1, 2, 4, 5]
+    subjects = [1, 2, 4, 5]
     #subjects = [1]
     #subjects = [7, 8, 9, 11, 12]
     #subjects = [10]
     #subjects = range(1, 13)
     #subjects = [5, 6, 7, 8, 9, 11, 12, 10]
-    subjects = [1, 2, 3, 4]
+    #subjects = [1, 2, 3, 4]
     #subjects = [2]
     #subjects = range(6, 7)
     #window_size = 2000

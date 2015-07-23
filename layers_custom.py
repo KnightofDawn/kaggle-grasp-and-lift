@@ -73,10 +73,10 @@ class MeanSubsampleLayer(layers.Layer):
         return tuple(output_shape)
 
     def get_output_for(self, input, **kwargs):
-        return T.mean(input.reshape(input.shape[0],
-                                    input.shape[1],
-                                    input.shape[2] / self.window.step,
-                                    self.window.step), axis=3)
+        return T.mean(input.reshape((input.shape[0],
+                                     input.shape[1],
+                                     input.shape[2] / self.window.step,
+                                     self.window.step)), axis=3)
 
 
 def run_subsample_tests():

@@ -96,7 +96,8 @@ def generate_submission(subj_id, window_size):
 
 def main():
     #subjects = range(1, 6)
-    subjects = [1, 2, 5, 7, 8, 9, 10, 11, 12]
+    #subjects = [1, 2, 5, 7, 8, 9, 10, 11, 12]
+    subjects = [3, 5, 6, 4]
     #subjects = [6, 7, 8, 10]
     #subjects = range(6, 13)
     window_size = 2000
