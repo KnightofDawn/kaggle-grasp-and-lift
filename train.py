@@ -14,30 +14,23 @@ import batching
 import iter_funcs
 import utils
 
-#from convnet import build_model
+from convnet import build_model
 #from convnet_small import build_model
 #from convnet_deep import build_model
-from convnet_deep_drop import build_model
+#from convnet_deep_drop import build_model
 #from convnet_deep_scale import build_model
-#from convnet_regions import build_model
-#from convnet_very_deep_drop import build_model
-#from convnet_regions_two_equal import build_model
-#from convnet_deeper import build_model
 
 
 def train_model(subj_id, window_size, max_epochs, patience):
     root_dir = join('data', 'nets')
     # the file from which to load pre-trained weights
-    init_file = join(root_dir,
-                     'subj%d_weights_deep_nocsp_wn_deeper_oneiros.pickle' % (
-                         subj_id))
     #init_file = join(root_dir,
-    #                 'subj%d_weights_deep_nocsp_wide.pickle' % (
+    #                 'subj%d_weights_deep_nocsp_wn_deeper_oneiros.pickle' % (
     #                     subj_id))
     init_file = None
     # the file to which the learned weights will be written
     weights_file = join(root_dir,
-                        'subj%d_weights_deep_nocsp_wide.pickle' % (
+                        'subj%d_weights.pickle' % (
                             subj_id))
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
@@ -63,7 +56,7 @@ def train_model(subj_id, window_size, max_epochs, patience):
     num_channels = 32
     num_actions = 6
     train_data, valid_data = \
-        utils.preprocess(subj_id, train_data, valid_data)
+        utils.preprocess(train_data, valid_data)
 
     print('building model...')
     l_out = build_model(None, num_channels,
@@ -231,7 +224,7 @@ def train_model(subj_id, window_size, max_epochs, patience):
 
 
 def main():
-    subjects = [1, 10, 11, 12, 7, 8, 9, 2]
+    #subjects = [1, 10, 11, 12, 7, 8, 9, 2]
     #subjects = range(1, 6)
     # the models that were underfitting
     #subjects = [1, 2, 4, 5]
@@ -240,13 +233,11 @@ def main():
     #subjects = [10]
     #subjects = range(1, 13)
     #subjects = [5, 6, 7, 8, 9, 11, 12, 10]
-    #subjects = [2, 3, 4, 1]
+    subjects = [1, 2, 3, 4]
     #subjects = [2]
     #subjects = range(6, 7)
-    window_size = 2000
-    #window_size = 1600
-    #subsample = 10
-    #subsample = 5
+    #window_size = 2000
+    window_size = 1000
     max_epochs = 10
     patience = 1
     #max_epochs = 5
