@@ -7,7 +7,7 @@ def make_submission():
     subjects = range(1, 13)
     submission_file = join('data',
                            'submissions',
-                           'convnet_deep_nocsp_wn_extra13467810.csv')
+                           'convnet_fixed.csv')
     header = ['id', 'HandStart', 'FirstDigitTouch', 'BothStartLoadPhase',
               'LiftOff', 'Replace', 'BothReleased']
     print('generating submission file: %s' % (submission_file))
@@ -16,7 +16,7 @@ def make_submission():
         for subj_id in subjects:
             pred_file = join('data',
                              'predictions',
-                             'subj%d_preds_deep_nocsp_wn_extra.csv' % (
+                             'subj%d_fixed.csv' % (
                                  subj_id))
             print('  reading probabilities from %s' % (pred_file))
             with open(pred_file, 'r') as ifile:

@@ -101,7 +101,7 @@ def build_model(batch_size,
 
     l_conv6 = Conv1DLayer(
         l_conv5,
-        name='conv4',
+        name='conv6',
         num_filters=64,
         border_mode='same',
         filter_size=3,

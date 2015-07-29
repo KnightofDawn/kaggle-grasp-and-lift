@@ -15,9 +15,9 @@ from os.path import join
 def generate_submission(subjects, window_size):
     weights_dir = join('data', 'nets')
     weights_file = join(weights_dir,
-                        'weights_super_random_init_lr.pickle')
+                        'weights_super_fixed.pickle')
     preds_file_template = join('data', 'predictions',
-                               'subj%d_preds_super.csv')
+                               'subj%d_fixed.csv')
 
     train_data, train_events = [], []
     # need to normalize over all subjects even if we're not predicting for all
@@ -32,7 +32,7 @@ def generate_submission(subjects, window_size):
         train_data += subj_train_data
         train_events += subj_train_events
 
-    batch_size = 256
+    batch_size = 512
     num_channels = 32
     num_actions = 6
 
@@ -54,6 +54,8 @@ def generate_submission(subjects, window_size):
         print('preprocessing...')
         train_data, test_data = \
             utils.preprocess(train_data, test_data)
+
+        test_data = batching.pad_test_series(test_data, window_size)
 
         # the test windows should be in fixed order
         test_slices = batching.get_permuted_windows(test_data, window_size,
@@ -77,15 +79,19 @@ def generate_submission(subjects, window_size):
             output_index = 0
             for series_id, series_subj_ids in enumerate(test_ids):
                 for i, test_id in enumerate(series_subj_ids):
-                    if i < window_size:
-                        zeros = np.zeros(6, dtype=np.float32)
-                        ofile.write('%s,%s\n' % (
-                            test_id, ','.join(['%.3f' % z for z in zeros])))
-                    else:
-                        probs = test_outputs[output_index]
-                        output_index += 1
-                        ofile.write('%s,%s\n' % (
-                            test_id, ','.join(['%.3f' % p for p in probs])))
+                    #if i < window_size:
+                    #    zeros = np.zeros(6, dtype=np.float32)
+                    #    ofile.write('%s,%s\n' % (
+                    #        test_id, ','.join(['%.3f' % z for z in zeros])))
+                    #else:
+                    #    probs = test_outputs[output_index]
+                    #    output_index += 1
+                    #    ofile.write('%s,%s\n' % (
+                    #        test_id, ','.join(['%.3f' % p for p in probs])))
+                    probs = test_outputs[output_index]
+                    output_index += 1
+                    ofile.write('%s,%s\n' % (
+                        test_id, ','.join(['%.3f' % p for p in probs])))
 
 
 if __name__ == '__main__':

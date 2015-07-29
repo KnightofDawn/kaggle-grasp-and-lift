@@ -28,7 +28,7 @@ def generate_submission(subj_id, window_size):
 
     print('predicting for subj_id %d...' % (subj_id))
     preds_file = join('data', 'predictions',
-                      'subj%d_preds_wide.csv' %
+                      'subj%d_preds_super.csv' %
                       subj_id)
     weights_file = join(weights_dir,
                         'subj%d_weights_deep_nocsp_wide.pickle' %
@@ -96,8 +96,7 @@ def generate_submission(subj_id, window_size):
 
 def main():
     #subjects = range(1, 6)
-    #subjects = [1, 2, 5, 7, 8, 9, 10, 11, 12]
-    subjects = [3, 5, 6, 4]
+    subjects = [1, 2, 7, 8, 9, 10, 11, 12]
     #subjects = [6, 7, 8, 10]
     #subjects = range(6, 13)
     window_size = 2000

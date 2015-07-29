@@ -14,10 +14,10 @@ import batching
 import iter_funcs
 import utils
 
-from convnet import build_model
+#from convnet import build_model
 #from convnet_small import build_model
 #from convnet_deep import build_model
-#from convnet_deep_drop import build_model
+from convnet_deep_drop import build_model
 #from convnet_deep_scale import build_model
 
 
@@ -25,7 +25,7 @@ def train_model(subj_id, window_size, max_epochs, patience):
     root_dir = join('data', 'nets')
     # the file from which to load pre-trained weights
     #init_file = join(root_dir,
-    #                 'subj%d_weights_deep_nocsp_wn_deeper_oneiros.pickle' % (
+    #                 'subj%d_weights.pickle' % (
     #                     subj_id))
     init_file = None
     # the file to which the learned weights will be written
@@ -51,8 +51,9 @@ def train_model(subj_id, window_size, max_epochs, patience):
     print('there are %d windows for training' % (len(train_slices)))
     print('there are %d windows for validation' % (len(valid_slices)))
 
-    #batch_size = 64
-    batch_size = 256
+    batch_size = 64
+    #batch_size = 256
+    #batch_size = 1024
     num_channels = 32
     num_actions = 6
     train_data, valid_data = \
@@ -61,6 +62,11 @@ def train_model(subj_id, window_size, max_epochs, patience):
     print('building model...')
     l_out = build_model(None, num_channels,
                         window_size, num_actions)
+    print('building model %s...' % (
+        sys.modules[build_model.__module__].__name__))
+    print('  batch_size = %d' % (batch_size))
+    print('  num_channels = %d' % (num_channels))
+    print('  window_size = %d' % (window_size))
 
     all_layers = layers.get_all_layers(l_out)
     print('this network has %d learnable parameters' %
@@ -117,9 +123,11 @@ def train_model(subj_id, window_size, max_epochs, patience):
                     continue
                 if i % 10 == 0:
                     eta = batch_duration * (num_batches - i)
-                    print('  training...  (ETA = %02d:%02d)\r'
-                          % divmod(eta, 60)),
-                    sys.stdout.flush()
+                    m, s = divmod(eta, 60)
+                    h, m = divmod(m, 60)
+                    print('  training...  (ETA = %d:%02d:%02d)\r'
+                          % (h, m, s)),
+                sys.stdout.flush()
                 train_losses.append(train_loss)
                 assert len(yb) == len(train_output)
                 for input, output in zip(yb, train_output):
@@ -164,8 +172,10 @@ def train_model(subj_id, window_size, max_epochs, patience):
                 batch_duration = time() - t_batch_start
                 if i % 10 == 0:
                     eta = batch_duration * (num_batches - i)
-                    print('  validation...  (ETA = %02d:%02d)\r'
-                          % divmod(eta, 60)),
+                    m, s = divmod(eta, 60)
+                    h, m = divmod(m, 60)
+                    print('  training...  (ETA = %d:%02d:%02d)\r'
+                          % (h, m, s)),
                     sys.stdout.flush()
 
                 valid_losses.append(valid_loss)
@@ -224,23 +234,12 @@ def train_model(subj_id, window_size, max_epochs, patience):
 
 
 def main():
-    #subjects = [1, 10, 11, 12, 7, 8, 9, 2]
-    #subjects = [3, 5, 6, 4]
-    #subjects = range(1, 6)
-    # the models that were underfitting
-    subjects = [1, 2, 4, 5]
-    #subjects = [1]
-    #subjects = [7, 8, 9, 11, 12]
-    #subjects = [10]
-    #subjects = range(1, 13)
-    #subjects = [5, 6, 7, 8, 9, 11, 12, 10]
-    #subjects = [1, 2, 3, 4]
-    #subjects = [2]
-    #subjects = range(6, 7)
-    #window_size = 2000
-    window_size = 1000
+    subjects = [3, 5, 1, 2, 4, 6, 7, 9]
+    window_size = 2000
+    #window_size = 1000
+    #window_size = 1000
     max_epochs = 10
-    patience = 1
+    patience = 2
     #max_epochs = 5
     model_train_losses, model_valid_losses = [], []
     model_train_rocs, model_valid_rocs = [], []

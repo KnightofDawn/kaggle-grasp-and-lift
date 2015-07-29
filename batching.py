@@ -4,6 +4,16 @@ import numpy as np
 import random
 
 
+def pad_test_series(test_data, window_size):
+    test_data_padded = []
+    for data in test_data:
+        padding = np.zeros((data.shape[0], window_size - 1), np.float32)
+        data = np.hstack((padding, data))
+        test_data_padded.append(data)
+
+    return test_data_padded
+
+
 # return slices that chunk a time-series into windows
 # of size window_size
 def get_series_window_slices(num_datapoints, window_size):

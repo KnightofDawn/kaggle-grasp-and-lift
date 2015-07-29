@@ -17,12 +17,12 @@ import utils
 #from convnet import build_model
 #from convnet_small import build_model
 #from convnet_deep import build_model
-#from convnet_deep_drop import build_model
+from convnet_deep_drop import build_model
 #from convnet_deep_scale import build_model
 #from convnet_regions import build_model
 #from convnet_very_deep_drop import build_model
 #from convnet_regions_two_equal import build_model
-from convnet_deeper import build_model
+#from convnet_deeper import build_model
 
 
 def train_model(window_size, max_epochs, patience):
@@ -31,13 +31,13 @@ def train_model(window_size, max_epochs, patience):
     #init_file = join(root_dir,
     #                 'subj%d_weights_deep_nocsp_wide.pickle' % (
     #                     4))
-    init_file = join(root_dir,
-                     'weights_super_deeper.pickle')
-    #init_file = None
+    #init_file = join(root_dir,
+    #                 'weights_super_deeper.pickle')
+    init_file = None
     # the file to which the learned weights will be written
     weights_file = join(root_dir,
-                        'weights_super_deeper_lr.pickle')
-    temp_weights_file = join(root_dir, 'super_epoch_%d_deeper_lr.pickle')
+                        'weights_fixed_1000.pickle')
+    temp_weights_file = join(root_dir, 'epoch_%d_fixed_1000.pickle')
     train_data, train_events = [], []
     valid_data, valid_events = [], []
     for subj_id in range(1, 13):
@@ -65,7 +65,7 @@ def train_model(window_size, max_epochs, patience):
     print('there are %d windows for validation' % (len(valid_slices)))
 
     #batch_size = 64
-    batch_size = 256
+    batch_size = 512
     num_channels = 32
     num_actions = 6
     train_data, valid_data = \
@@ -95,8 +95,8 @@ def train_model(window_size, max_epochs, patience):
     else:
         print('all layers will be trained from random initialization')
 
-    lr = theano.shared(np.cast['float32'](0.001))
-    #lr = theano.shared(np.cast['float32'](0.01))
+    #1r = theano.shared(np.cast['float32'](0.001))
+    lr = theano.shared(np.cast['float32'](0.01))
     mntm = 0.9
     print('compiling theano functions...')
     train_iter = iter_funcs.create_iter_funcs_train(lr, mntm, l_out)
@@ -251,7 +251,8 @@ def train_model(window_size, max_epochs, patience):
 
 
 def main():
-    window_size = 2000
+    #window_size = 2000
+    window_size = 1000
     max_epochs = 10
     patience = 1
     model_train_loss, model_valid_loss, model_train_roc, model_valid_roc =\
