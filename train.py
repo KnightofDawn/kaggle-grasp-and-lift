@@ -16,9 +16,12 @@ import utils
 
 #from convnet import build_model
 #from convnet_small import build_model
-#from convnet_deep import build_model
-from convnet_deep_drop import build_model
+from convnet_deep import build_model
+#from convnet_nopool import build_model
+#from convnet_deep_drop import build_model
+#from convnet_deep_drop_reg import build_model
 #from convnet_deep_scale import build_model
+#from convnet_bn import build_model
 
 
 def train_model(subj_id, window_size, max_epochs, patience):
@@ -30,7 +33,7 @@ def train_model(subj_id, window_size, max_epochs, patience):
     init_file = None
     # the file to which the learned weights will be written
     weights_file = join(root_dir,
-                        'subj%d_weights.pickle' % (
+                        'subj%d_noise.pickle' % (
                             subj_id))
     print('loading time series for subject %d...' % (subj_id))
     data_list, events_list = utils.load_subject_train(subj_id)
@@ -42,6 +45,17 @@ def train_model(subj_id, window_size, max_epochs, patience):
     print('using %d time series for training' % (len(train_data)))
     print('using %d time series for validation' % (len(valid_data)))
 
+    train_data, valid_data = \
+        utils.preprocess(train_data, valid_data)
+    #train_data = [data.astype(np.float32) for data in train_data]
+    #valid_data = [data.astype(np.float32) for data in valid_data]
+
+    #train_data, train_events = utils.remove_easy_negatives(
+    #    train_data, train_events)
+
+    #valid_data, valid_events = utils.remove_easy_negatives(
+    #    valid_data, valid_events)
+
     print('creating fixed-size time-windows of size %d' % (window_size))
     # the training windows should be in random order
     train_slices = batching.get_permuted_windows(train_data, window_size,
@@ -51,13 +65,14 @@ def train_model(subj_id, window_size, max_epochs, patience):
     print('there are %d windows for training' % (len(train_slices)))
     print('there are %d windows for validation' % (len(valid_slices)))
 
+    train_slices = utils.duplicate_positives(train_slices, train_events)
+    print('there are %d windows for training' % (len(train_slices)))
+
     batch_size = 64
     #batch_size = 256
-    #batch_size = 1024
+    #batch_size = 4096
     num_channels = 32
     num_actions = 6
-    train_data, valid_data = \
-        utils.preprocess(train_data, valid_data)
 
     print('building model...')
     l_out = build_model(None, num_channels,
@@ -110,7 +125,7 @@ def train_model(subj_id, window_size, max_epochs, patience):
                                         train_slices,
                                         train_data,
                                         train_events,
-                                        window_norm=False)):
+                                        noisy=True)):
                 t_batch_start = time()
                 # hack for faster debugging
                 #if i < 70000:
@@ -120,8 +135,8 @@ def train_model(subj_id, window_size, max_epochs, patience):
                 batch_duration = time() - t_batch_start
                 if np.isnan(train_loss):
                     print('nan loss encountered in minibatch %d' % (i))
-                    continue
-                if i % 10 == 0:
+                    exit(0)
+                if i % 100 == 0:
                     eta = batch_duration * (num_batches - i)
                     m, s = divmod(eta, 60)
                     h, m = divmod(m, 60)
@@ -153,7 +168,7 @@ def train_model(subj_id, window_size, max_epochs, patience):
                                         valid_slices,
                                         valid_data,
                                         valid_events,
-                                        window_norm=False)):
+                                        noisy=False)):
                 #augmented_valid_losses, augmented_valid_outputs = [], []
                 #for offset in range(0, subsample):
                 #    valid_loss, valid_output = \
@@ -174,7 +189,7 @@ def train_model(subj_id, window_size, max_epochs, patience):
                     eta = batch_duration * (num_batches - i)
                     m, s = divmod(eta, 60)
                     h, m = divmod(m, 60)
-                    print('  training...  (ETA = %d:%02d:%02d)\r'
+                    print('  validation...  (ETA = %d:%02d:%02d)\r'
                           % (h, m, s)),
                     sys.stdout.flush()
 
@@ -234,9 +249,10 @@ def train_model(subj_id, window_size, max_epochs, patience):
 
 
 def main():
-    subjects = [3, 5, 1, 2, 4, 6, 7, 9]
+    #subjects = range(5, 13)
+    subjects = [1]
     window_size = 2000
-    #window_size = 1000
+    #window_size = 200
     #window_size = 1000
     max_epochs = 10
     patience = 2

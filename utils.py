@@ -2,12 +2,45 @@
 
 import numpy as np
 import pandas as pd
+import random
 
 from time import time, strftime
+
+from scipy.signal import butter, lfilter  # NOQA
 
 
 def get_current_time():
     return strftime('%Y-%m-%d_%H:%M:%S')
+
+
+def duplicate_positives(slices, y):
+    slices_new = []
+    for index, s in slices:
+        if y[index][:, s][:, -1].sum() > 0:
+            slices_new.append((index, s))
+
+    for _ in range(10):
+        slices += slices_new
+    random.shuffle(slices)
+    return slices
+
+
+def remove_easy_negatives(train_data, train_events):
+    train_data_new, train_events_new = [], []
+    for data, events in zip(train_data, train_events):
+        indexes = np.zeros(data.shape[1], dtype=np.bool)
+        for i in range(data.shape[1]):
+            pre_event = np.sum(events[:, i:(i + 150)]) > 0
+            post_event = np.sum(events[:, (i - 150):i]) > 0
+
+            indexes[i] = (pre_event or
+                          post_event or
+                          np.random.choice([True, False], p=(0.5, 0.5)))
+
+        train_data_new.append(data[:, indexes])
+        train_events_new.append(events[:, indexes])
+
+    return train_data_new, train_events_new
 
 
 def load_subject_train(subj_id):
@@ -49,6 +82,10 @@ def load_subject_test(subj_id):
 # compute a normalizing transformation over all the training data,
 # and apply this same transform to unseen data
 def preprocess(train_data, test_data):
+    #b, a = butter(5, np.array([10]) / 250., btype='lowpass')
+    #train_data = [lfilter(b, a, data) for data in train_data]
+    #test_data = [lfilter(b, a, data) for data in test_data]
+
     train_data = [data.astype(np.float32) for data in train_data]
     test_data = [data.astype(np.float32) for data in test_data]
 

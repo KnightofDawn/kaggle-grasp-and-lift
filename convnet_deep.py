@@ -1,3 +1,4 @@
+import layers_custom
 from lasagne import layers
 from lasagne import nonlinearities
 from lasagne import init
@@ -10,6 +11,8 @@ from lasagne.layers import pool
 
 Conv1DLayer = conv.Conv1DLayer
 MaxPool1DLayer = pool.MaxPool1DLayer
+SubsampleLayer = layers_custom.SubsampleLayer
+WindowNormLayer = layers_custom.WindowNormLayer
 
 
 def build_model(batch_size,
@@ -21,29 +24,33 @@ def build_model(batch_size,
         name='l_in',
     )
 
-    l_conv1 = Conv1DLayer(
+    l_sampling = SubsampleLayer(
         l_in,
+        window=(None, None, 5),
+        name='l_sampling',
+    )
+
+    l_window = WindowNormLayer(
+        l_sampling,
+        name='l_window',
+    )
+
+    l_conv1 = Conv1DLayer(
+        l_window,
         name='conv1',
-        num_filters=8,
-        border_mode='valid',
-        filter_size=3,
+        num_filters=16,
+        border_mode='same',
+        filter_size=1,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
     )
 
-    l_pool1 = MaxPool1DLayer(
-        l_conv1,
-        name='pool1',
-        pool_size=3,
-        stride=2,
-    )
-
     l_conv2 = Conv1DLayer(
-        l_pool1,
+        l_conv1,
         name='conv2',
-        num_filters=16,
-        border_mode='valid',
-        filter_size=3,
+        num_filters=8,
+        border_mode='same',
+        filter_size=1,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
     )
@@ -59,7 +66,7 @@ def build_model(batch_size,
         l_pool2,
         name='conv3',
         num_filters=32,
-        border_mode='valid',
+        border_mode='same',
         filter_size=3,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
@@ -68,8 +75,8 @@ def build_model(batch_size,
     l_conv4 = Conv1DLayer(
         l_conv3,
         name='conv4',
-        num_filters=32,
-        border_mode='valid',
+        num_filters=16,
+        border_mode='same',
         filter_size=3,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
@@ -82,15 +89,68 @@ def build_model(batch_size,
         stride=2,
     )
 
-    l_dropout_dense1 = layers.DropoutLayer(
+    l_conv5 = Conv1DLayer(
         l_pool4,
-        #l_pool2,
+        name='conv5',
+        num_filters=64,
+        border_mode='same',
+        filter_size=3,
+        nonlinearity=nonlinearities.rectify,
+        W=init.Orthogonal(),
+    )
+
+    l_conv6 = Conv1DLayer(
+        l_conv5,
+        name='conv6',
+        num_filters=32,
+        border_mode='same',
+        filter_size=3,
+        nonlinearity=nonlinearities.rectify,
+        W=init.Orthogonal(),
+    )
+
+    l_pool6 = MaxPool1DLayer(
+        l_conv6,
+        name='pool6',
+        pool_size=3,
+        stride=2,
+    )
+
+    l_conv7 = Conv1DLayer(
+        l_pool6,
+        name='conv7',
+        num_filters=64,
+        border_mode='same',
+        filter_size=3,
+        nonlinearity=nonlinearities.rectify,
+        W=init.Orthogonal(),
+    )
+
+    l_conv8 = Conv1DLayer(
+        l_conv7,
+        name='conv8',
+        num_filters=32,
+        border_mode='same',
+        filter_size=3,
+        nonlinearity=nonlinearities.rectify,
+        W=init.Orthogonal(),
+    )
+
+    l_pool8 = MaxPool1DLayer(
+        l_conv8,
+        name='pool8',
+        pool_size=3,
+        stride=2,
+    )
+
+    l_dropout_dense1 = layers.DropoutLayer(
+        l_pool8,
         p=0.5,
     )
 
     l_dense1 = layers.DenseLayer(
         l_dropout_dense1,
-        num_units=128,
+        num_units=64,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
     )
@@ -102,7 +162,7 @@ def build_model(batch_size,
 
     l_dense2 = layers.DenseLayer(
         l_dropout_dense2,
-        num_units=128,
+        num_units=64,
         nonlinearity=nonlinearities.rectify,
         W=init.Orthogonal(),
     )

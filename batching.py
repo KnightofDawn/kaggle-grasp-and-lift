@@ -59,7 +59,7 @@ def normalize_window(X):
 # splits the list of window indices and slices into batches
 # and grabs the fixed-length windows from the corresponding
 # slice from that time-series
-def batch_iterator(bs, W, X, y=None, window_norm=False):
+def batch_iterator(bs, W, X, y=None, noisy=False):
     if not W:
         raise StopIteration
     window_size = W[0][1].stop - W[0][1].start
@@ -68,25 +68,24 @@ def batch_iterator(bs, W, X, y=None, window_norm=False):
     for i in range(N):
         Wb = W[i * bs:(i + 1) * bs]
 
-        #X_batch = np.empty((bs, X[0].shape[0], window_size), dtype=np.float32)
-        #if y is not None:
-        #    y_batch = np.empty((bs, 6), dtype=np.int32)
-        #else:
-        #    y_batch = None
         X_batch_list, y_batch_list = [], []
         # index: which time series to take the window from
         # s:     the slice to take from that time series
         for j, (index, s) in enumerate(Wb):
-            if window_norm:
-                X_window = normalize_window(X[index][:, s])
-            else:
-                X_window = X[index][:, s]
-            X_batch_list.append(X_window)
-            #X_batch[j, ...] = X_window
+            X_window = X[index][:, s]
             if y is not None:
                 y_window = y[index][:, s][:, -1]
-                #y_batch[j, ...] = y_window
                 y_batch_list.append(y_window)
+
+            # this is test data, train data but no action is present,
+            # or validation data (don't want noise)
+            if y is None or y_window.sum() == 0 or not noisy:
+                X_batch_list.append(X_window)
+            # this is train data and an action is present, so add noise
+            else:
+                noise = np.random.normal(
+                    0, 0.1, X_window.shape).astype(np.float32)
+                X_batch_list.append(X_window + noise)
 
         # reshape to (batch_size, num_channels, window_size)
         X_batch = np.vstack(X_batch_list).reshape(-1,
@@ -95,12 +94,7 @@ def batch_iterator(bs, W, X, y=None, window_norm=False):
             y_batch = None
         else:
             y_batch = np.vstack(y_batch_list)
-        #if j < 63:
-        #    print('discarding rest of batch')
-        #    X_batch = X_batch[:j, ...]
-        #    y_batch = y_batch[:j, ...]
-        #assert X_batch.shape == (64, 32, 2000), 'bad X shape'
-        #assert y_batch.shape == (64, 6), 'bad y shape'
+
         yield X_batch, y_batch
 
 
