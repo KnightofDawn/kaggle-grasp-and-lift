@@ -6,8 +6,6 @@ import random
 
 from time import time, strftime
 
-from scipy.signal import butter, lfilter  # NOQA
-
 
 def get_current_time():
     return strftime('%Y-%m-%d_%H:%M:%S')
@@ -82,10 +80,6 @@ def load_subject_test(subj_id):
 # compute a normalizing transformation over all the training data,
 # and apply this same transform to unseen data
 def preprocess(train_data, test_data):
-    #b, a = butter(5, np.array([10]) / 250., btype='lowpass')
-    #train_data = [lfilter(b, a, data) for data in train_data]
-    #test_data = [lfilter(b, a, data) for data in test_data]
-
     train_data = [data.astype(np.float32) for data in train_data]
     test_data = [data.astype(np.float32) for data in test_data]
 

@@ -44,11 +44,6 @@ def get_permuted_windows(series_list, window_size, rand=True):
 
 
 def normalize_window(X):
-    #X_mean = np.mean(X, axis=1).reshape(-1, 1)
-    #X = X - X_mean
-    #X_std = np.std(X, axis=1).reshape(-1, 1)
-    #X = X / X_std
-
     # normalize each channel's signal to be between 0 and 1
     X_min = np.min(X, axis=1).reshape(-1, 1)
     X_max = np.max(X, axis=1).reshape(-1, 1)
@@ -96,20 +91,6 @@ def batch_iterator(bs, W, X, y=None, noisy=False):
             y_batch = np.vstack(y_batch_list)
 
         yield X_batch, y_batch
-
-
-def compute_geometric_mean(mat_list):
-    log_mat_sum = np.sum(np.log(np.array(mat_list)), axis=0)
-    log_mat_sum /= len(mat_list)
-    geom_mean = np.power(np.e, log_mat_sum)
-
-    return geom_mean
-
-
-def compute_arithmetic_mean(mat_list):
-    mean = np.mean(np.array(mat_list), axis=0)
-
-    return mean
 
 
 if __name__ == '__main__':

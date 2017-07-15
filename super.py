@@ -14,15 +14,7 @@ import batching
 import iter_funcs
 import utils
 
-#from convnet import build_model
-#from convnet_small import build_model
-#from convnet_deep import build_model
 from convnet_deep_drop import build_model
-#from convnet_deep_scale import build_model
-#from convnet_regions import build_model
-#from convnet_very_deep_drop import build_model
-#from convnet_regions_two_equal import build_model
-#from convnet_deeper import build_model
 
 
 def train_model(window_size, max_epochs, patience):
@@ -36,8 +28,8 @@ def train_model(window_size, max_epochs, patience):
     init_file = None
     # the file to which the learned weights will be written
     weights_file = join(root_dir,
-                        'weights_fixed_1000.pickle')
-    temp_weights_file = join(root_dir, 'epoch_%d_fixed_1000.pickle')
+                        'weights.pickle')
+    temp_weights_file = join(root_dir, 'epoch_%d.pickle')
     train_data, train_events = [], []
     valid_data, valid_events = [], []
     for subj_id in range(1, 13):
@@ -165,15 +157,6 @@ def train_model(window_size, max_epochs, patience):
                                         valid_data,
                                         valid_events,
                                         window_norm=False)):
-                #augmented_valid_losses, augmented_valid_outputs = [], []
-                #for offset in range(0, subsample):
-                #    valid_loss, valid_output = \
-                #        valid_iter(Xb[:, :, offset::subsample], yb)
-                #    augmented_valid_losses.append(valid_loss)
-                #    augmented_valid_outputs.append(valid_output)
-                #valid_loss = np.mean(augmented_valid_losses)
-                #valid_output = batching.compute_geometric_mean(
-                #    augmented_valid_outputs)
                 t_batch_start = time()
                 valid_loss, valid_output = \
                     valid_iter(Xb, yb)
@@ -251,8 +234,8 @@ def train_model(window_size, max_epochs, patience):
 
 
 def main():
-    #window_size = 2000
-    window_size = 1000
+    window_size = 2000
+    #window_size = 1000
     max_epochs = 10
     patience = 1
     model_train_loss, model_valid_loss, model_train_roc, model_valid_roc =\
